@@ -3,6 +3,12 @@
 MYSELF="$(readlink -f "$0")"
 MYDIR="${MYSELF%/*}"
 
+# check if this project is already running by checking a node process with the name "whatsapp-bot"
+if pgrep -f "whatsapp-bot" > /dev/null; then
+  echo "WhatsApp bot is already running"
+  exit 1
+fi
+
 port=$(cat $MYDIR/.env | grep PORT | cut -d '=' -f2)
 nohup npm-start.sh &
 pid=$!

@@ -119,7 +119,7 @@ Abrir menu semelhante ao da sugestão dada a cima e fazer o usuário fazer o cad
 > • E-mail: \[Email informado\]  
 > • Bloco: \[Bloco informado\]  
 > • Unidade \[Unidade informada\]  
-> Está tudo correto?  
+> As informações estão corretas?
 > \[Usar aqueles botões tipo da sugestão para deixar moradores decidirem o que querem mudar ou confimar\]
 *   Se o clicou em "Confirmar":
 > 🤖 Assistente Virtual: Perfeito! ✅  

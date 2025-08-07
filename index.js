@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
-const { createMachine, createActor } = require("xstate");
+const { createMachine, createActor, assign } = require("xstate");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,14 +11,15 @@ app.use(bodyParser.json());
 
 // In-memory storage for user data and state machines
 const userStateMachines = new Map(); // Stores XState interpreters for each user
-const users = new Map(); // Simulated user database
-const occurrences = new Map(); // Simulated occurrences database
+const users = new Map(); // in-memory user database
+const occurrences = new Map(); // in-memory occurrences database
 let occurrenceCounter = 1;
 
 const USER_STATUS = {
     TERMS_NOT_ACCEPTED: 'terms_not_accepted',
     PRE_REGISTERED: 'pre_registered',
     REGISTRATION_PENDING: 'registration_pending',
+    APPROVAL_PENDING: 'approval_pending',
     APPROVED: 'approved',
     REJECTED: 'rejected'
 };
@@ -36,7 +37,10 @@ const conversationMachine = createMachine({
     initial: 'checkingTerms',
     context: {
         phone: null,
-        userData: {},
+        userName: '',
+        userEmail: '',
+        userBlock: '',
+        userUnit: '',
         occurrenceData: {},
         feedbackData: {}
     },
@@ -60,7 +64,11 @@ const conversationMachine = createMachine({
         checkingUserStatus: {
             on: {
                 PRE_REGISTERED: 'waitingDataConfirmation',
-                NEW_USER: 'waitingName',
+                NEW_USER: { 
+                    target: 'waitingName', actions: assign({
+                        userName: ({ event }) => event.data
+                    })
+                },
                 APPROVED: 'mainMenu',
                 PENDING: 'registrationPending',
                 REJECTED: 'registrationRejected'
@@ -70,7 +78,9 @@ const conversationMachine = createMachine({
             on: {
                 PROVIDE_NAME: {
                     target: 'waitingEmail',
-                    actions: 'storeName'
+                    actions: assign({
+                        userName: ({ event }) => event.data
+                    })
                 }
             }
         },
@@ -78,7 +88,9 @@ const conversationMachine = createMachine({
             on: {
                 PROVIDE_EMAIL: {
                     target: 'waitingBlock',
-                    actions: 'storeEmail'
+                    actions: assign({
+                        userEmail: ({ event }) => event.data
+                    })
                 }
             }
         },
@@ -86,7 +98,9 @@ const conversationMachine = createMachine({
             on: {
                 PROVIDE_BLOCK: {
                     target: 'waitingUnit',
-                    actions: 'storeBlock'
+                    actions: assign({
+                        userBlock: ({ event }) => event.data
+                    })
                 }
             }
         },
@@ -94,7 +108,9 @@ const conversationMachine = createMachine({
             on: {
                 PROVIDE_UNIT: {
                     target: 'waitingDataConfirmation',
-                    actions: 'storeUnit'
+                    actions: assign({
+                        userUnit: ({ event }) => event.data
+                    })
                 }
             }
         },
@@ -116,7 +132,12 @@ const conversationMachine = createMachine({
         },
         mainMenu: {
             on: {
-                START_OCCURRENCE: 'waitingOccurrenceDescription',
+                START_OCCURRENCE: { 
+                    target: 'waitingOccurrenceDescription', 
+                    actions: assign({
+                        occurrenceData: ({ event }) => event.data
+                    })
+                },
                 VIEW_OCCURRENCES: 'viewingOccurrences',
                 OCCURRENCE_RESOLVED: 'waitingFeedback'
             }
@@ -125,7 +146,11 @@ const conversationMachine = createMachine({
             on: {
                 PROVIDE_DESCRIPTION: {
                     target: 'waitingOccurrenceMedia',
-                    actions: 'storeDescription'
+                    actions: assign({
+                        occurrenceData: {
+                            description: ({ event }) => event.data
+                        }
+                    })
                 }
             }
         },
@@ -133,11 +158,15 @@ const conversationMachine = createMachine({
             on: {
                 PROVIDE_MEDIA: {
                     target: 'mainMenu',
-                    actions: 'createOccurrence'
+                    actions: assign({
+                        occurrenceData: ({ event }) => event.data
+                    })
                 },
                 NO_MEDIA: {
                     target: 'mainMenu',
-                    actions: 'createOccurrence'
+                    actions: assign({
+                        occurrenceData: ({ event }) => event.data
+                    })
                 }
             }
         },
@@ -163,6 +192,12 @@ const conversationMachine = createMachine({
     }
 }, {
     actions: {
+        storeUser: (context, event) => {
+            context.userData = event.data;
+        },
+        storeOccurrence: (context, event) => {
+            context.occurrenceData = event.data;
+        },
         storeName: (context, event) => {
             context.userData.name = event.data;
         },
@@ -190,7 +225,7 @@ const conversationMachine = createMachine({
 // Sample pre-registered users
 users.set('5511999999999', {
     phone: '5511999999999',
-    name: 'João Silva',
+    name: 'João Silvan',
     email: 'joao@email.com',
     block: 'A',
     unit: '101',
@@ -211,14 +246,19 @@ function generateProtocol() {
     const second = String(now.getSeconds()).padStart(2, '0');
     const id = String(occurrenceCounter++).padStart(3, '0');
     
-    return `${year}${month}${day}${hour}${minute}${second}-${id}`;
+    return `${year}${month}${day}-${hour}${minute}${second}-${id}`;
 }
 
 // Helper function to send WhatsApp message
 async function sendWhatsAppMessage(to, message) {
+    // Use mock API in development
+    const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `https://graph.facebook.com/${process.env.WABA_API_VERSION}`
+        : process.env.MOCK_WHATSAPP_URL || `http://localhost:3001/${process.env.WABA_API_VERSION}`;
     try {
+        
         await axios.post(
-            `https://graph.facebook.com/${process.env.WABA_API_VERSION}/${process.env.PHONE_NUMBER_ID}/messages`,
+            `${baseUrl}/${process.env.PHONE_NUMBER_ID}/messages`,
             {
                 messaging_product: "whatsapp",
                 to: to,
@@ -233,15 +273,20 @@ async function sendWhatsAppMessage(to, message) {
         );
         console.log(`Message sent to ${to}: ${message}`);
     } catch (error) {
-        console.error(`Error sending message to ${to}:`, error.response?.data || error.message);
+        console.error(`[${baseUrl}] Error sending message to ${to}:`, error.response?.data || error.message);
     }
 }
 
 // Helper function to send WhatsApp message with buttons
-async function sendWhatsAppMessageWithButtons(to, text, buttons) {
+async function sendWhatsAppInteractiveMessage(to, text, buttons) {
+    // Use mock API in development
+    const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `https://graph.facebook.com/${process.env.WABA_API_VERSION}`
+        : process.env.MOCK_WHATSAPP_URL || `http://localhost:3001/${process.env.WABA_API_VERSION}`;
     try {
+        
         await axios.post(
-            `https://graph.facebook.com/${process.env.WABA_API_VERSION}/${process.env.PHONE_NUMBER_ID}/messages`,
+            `${baseUrl}/${process.env.PHONE_NUMBER_ID}/messages`,
             {
                 messaging_product: "whatsapp",
                 to: to,
@@ -263,7 +308,53 @@ async function sendWhatsAppMessageWithButtons(to, text, buttons) {
         );
         console.log(`Interactive message sent to ${to}`);
     } catch (error) {
-        console.error(`Error sending interactive message to ${to}:`, error.response?.data || error.message);
+        console.error(`[${baseUrl}] Error sending interactive message to ${to}:`, error.response?.data || error.message);
+    }
+}
+
+// Helper function to send WhatsApp list message
+async function sendWhatsAppListMessage(to, text, buttonText, sections, header = null, footer = null) {
+    // Use mock API in development
+    const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `https://graph.facebook.com/${process.env.WABA_API_VERSION}`
+        : process.env.MOCK_WHATSAPP_URL || `http://localhost:3001/${process.env.WABA_API_VERSION}`;
+    
+    try {
+        const interactive = {
+            type: "list",
+            body: { text: text },
+            action: {
+                button: buttonText,
+                sections: sections
+            }
+        };
+
+        if (header) {
+            interactive.header = { type: "text", text: header };
+        }
+
+        if (footer) {
+            interactive.footer = { text: footer };
+        }
+        
+        await axios.post(
+            `${baseUrl}/${process.env.PHONE_NUMBER_ID}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: to,
+                type: "interactive",
+                interactive: interactive
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+        console.log(`List message sent to ${to}`);
+    } catch (error) {
+        console.error(`[${baseUrl}] Error sending list message to ${to}:`, error.response?.data || error.message);
     }
 }
 
@@ -283,12 +374,7 @@ Pelo aplicativo, além das ocorrências, você pode reservar áreas comuns, ver 
 function getOrCreateStateMachine(phone) {
     if (!userStateMachines.has(phone)) {
         // interpret() deprecated
-        const service = createActor(conversationMachine.withContext({
-            phone,
-            userData: {},
-            occurrenceData: {},
-            feedbackData: {}
-        }));
+        const service = createActor(conversationMachine);
         
         service.start();
         userStateMachines.set(phone, service);
@@ -303,10 +389,16 @@ function getCurrentState(phone) {
 }
 
 // Send event to state machine
-function sendEvent(phone, event, data = null) {
-    const service = getOrCreateStateMachine(phone);
-    service.send({ type: event, data });
-    return service.getSnapshot().value;
+function sendEvent(phone, name, data = null) {
+    const actor = getOrCreateStateMachine(phone);
+    let event = { type: name };
+    if (data) {
+        event.data = data;
+    }
+    actor.send(event);
+    
+    console.log(`-> Event sent to ${phone}: ${name}`, data);
+    return actor.getSnapshot().value;
 }
 
 // Clear state machine for user
@@ -329,14 +421,21 @@ function needsTermsAcceptance(user) {
     return !user || !user.termsAccepted;
 }
 
+function waitingRegistration(currentState) {
+    return currentState === 'waitingName' || currentState === 'waitingEmail' ||
+           currentState === 'waitingBlock' || currentState === 'waitingUnit';
+}
+
 // Handle terms acceptance flow
 async function handleTermsAcceptance(phone, message) {
-    const user = users.get(phone);
+    const user = users.get(phone) || {};
     const currentState = getCurrentState(phone);
+
+    console.log(`Handling terms acceptance for ${phone}, current state: ${currentState}, message: ${message}`);
     
     if (currentState === 'checkingTerms') {
         // First interaction - show terms
-        const welcomeMessage = `Olá${user ? `, ${user.name}` : ''}! Sou a assistente virtual do Condomínio [Nome do Condomínio]. Que bom te ver por aqui! Para começarmos e garantirmos a transparência e a segurança das suas informações, você precisa ler e aceitar nossos Termos de Uso e nossa Política de Privacidade.
+        const welcomeMessage = `Olá${user.name ? `, ${user.name}` : ''}! Sou a assistente virtual do Condomínio [Nome do Condomínio]. Que bom te ver por aqui! Para começarmos e garantirmos a transparência e a segurança das suas informações, você precisa ler e aceitar nossos Termos de Uso e nossa Política de Privacidade.
 
 Você pode consultá-los aqui:
 🔗 Termos de Uso: (link)
@@ -344,7 +443,7 @@ Você pode consultá-los aqui:
 
 Ao aceitar, você também declara ser maior de 18 anos. Para confirmar e ativar seu acesso, por favor.`;
 
-        await sendWhatsAppMessageWithButtons(phone, welcomeMessage, [
+        await sendWhatsAppInteractiveMessage(phone, welcomeMessage, [
             { type: "reply", reply: { id: "accept_terms", title: "Aceito" } },
             { type: "reply", reply: { id: "reject_terms", title: "Não aceito" } }
         ]);
@@ -354,13 +453,18 @@ Ao aceitar, você também declara ser maior de 18 anos. Para confirmar e ativar 
     }
 
     // Handle terms response
-    if (message === "aceito" || message === "Aceito") {
+    if (message === "accept_terms") {
         // Accept terms
-        if (user) {
-            user.termsAccepted = true;
-            user.termsAcceptedAt = new Date();
-            user.termsVersion = "1.0";
+        if (!user.phone) {
+            console.log(`Creating new user for phone ${phone}`);
+            user.phone = phone;
+            users.set(phone, user);
         }
+
+        user.status = USER_STATUS.REGISTRATION_PENDING;
+        user.termsAccepted = true;
+        user.termsAcceptedAt = new Date();
+        user.termsVersion = "1.0";
         
         await sendWhatsAppMessage(phone, "Ótimo, obrigado por confirmar!\nSeus termos foram aceitos com sucesso. ✅");
         
@@ -374,10 +478,10 @@ Ao aceitar, você também declara ser maior de 18 anos. Para confirmar e ativar 
             sendEvent(phone, 'APPROVED');
             await showMainMenu(phone);
         } else {
-            sendEvent(phone, 'NEW_USER');
+            sendEvent(phone, 'NEW_USER', user);
             await handleNewUserRegistration(phone);
         }
-    } else if (message === "não aceito" || message === "Não aceito") {
+    } else if (message === "reject_terms" ) {
         // Reject terms
         const rejectMessage = `Entendido.
 Para garantir a segurança de todos e a conformidade com a Lei Geral de Proteção de Dados (LGPD), o aceite dos termos é um passo necessário para podermos processar suas solicitações por este canal.
@@ -387,12 +491,18 @@ Se você mudar de ideia no futuro, basta me enviar um "Olá" novamente para reco
         await sendWhatsAppMessage(phone, rejectMessage);
         sendEvent(phone, 'REJECT_TERMS');
         clearStateMachine(phone);
+    } else {
+        // Invalid response
+        await sendWhatsAppMessage(phone, `[${message}] Desculpe, não entendi sua resposta. Por favor, responda com 'Aceito' ou 'Não aceito' para continuar.`);
+        return;
     }
 }
 
 // Handle pre-registered user confirmation
 async function handlePreRegisteredUser(phone) {
     const user = users.get(phone);
+    console.log(`Handling pre-registered user confirmation for ${phone}`, user);
+
     const confirmationMessage = `Olá!
 Identifiquei que a administração do Condomínio [Nome do Condomínio] iniciou seu cadastro em nosso canal de ocorrências. Seja bem-vindo(a)!
 
@@ -404,7 +514,7 @@ Para ativarmos seu acesso, por favor, confirme se os dados abaixo estão correto
 
 As informações estão corretas?`;
 
-    await sendWhatsAppMessageWithButtons(phone, confirmationMessage, [
+    await sendWhatsAppInteractiveMessage(phone, confirmationMessage, [
         { type: "reply", reply: { id: "data_correct", title: "1️⃣ Sim, estão corretas" } },
         { type: "reply", reply: { id: "data_incorrect", title: "2️⃣ Não, quero corrigir" } }
     ]);
@@ -412,6 +522,8 @@ As informações estão corretas?`;
 
 // Handle new user registration
 async function handleNewUserRegistration(phone) {
+    console.log(`Handling new user registration for ${phone}`);
+
     const welcomeMessage = `Olá! Bem-vindo(a) ao canal oficial do Condomínio [Nome do Condomínio].
 
 ${EMERGENCY_ALERT}
@@ -425,41 +537,47 @@ Vejo que este é seu primeiro acesso. Para solicitar seu cadastro, preciso de al
 async function handleRegistrationFlow(phone, message) {
     const currentState = getCurrentState(phone);
     const context = getContextData(phone);
+    const user = users.get(phone) || {};
+
+    console.log(`Handling registration flow for ${phone}, current state: ${currentState}, message: ${message}`, context);
     
     switch (currentState) {
         case 'waitingName':
             sendEvent(phone, 'PROVIDE_NAME', message);
+            user.name = message;
+
             await sendWhatsAppMessage(phone, `Obrigado, ${message}. Agora, seu melhor e-mail.`);
             break;
             
         case 'waitingEmail':
             sendEvent(phone, 'PROVIDE_EMAIL', message);
+            user.email = message;
+
             await sendWhatsAppMessage(phone, "Perfeito. Agora, vamos à sua unidade. Por favor, informe o bloco. (Ex: A, B, Villa, etc.)");
             break;
             
         case 'waitingBlock':
             sendEvent(phone, 'PROVIDE_BLOCK', message);
+            user.block = message;
+
             await sendWhatsAppMessage(phone, "Ótimo. Agora, por favor, digite o número do seu apartamento ou casa ou unidade (Ex: 502, 104, etc.)");
             break;
             
         case 'waitingUnit':
             sendEvent(phone, 'PROVIDE_UNIT', message);
-            
-            const data = getContextData(phone).userData;
+            user.unit = message;
+
             const confirmationMessage = `Ótimo. Só para confirmar as informações:
-• Nome: ${data.name}
-• E-mail: ${data.email}
-• Bloco: ${data.block}
-• Unidade ${data.unit}
+• Nome: ${user.name}
+• E-mail: ${user.email}
+• Bloco: ${user.block}
+• Unidade ${user.unit}
 
 Está tudo correto?`;
 
-            await sendWhatsAppMessageWithButtons(phone, confirmationMessage, [
+            await sendWhatsAppInteractiveMessage(phone, confirmationMessage, [
                 { type: "reply", reply: { id: "confirm_registration", title: "Confirmar" } },
-                { type: "reply", reply: { id: "edit_name", title: "Editar Nome" } },
-                { type: "reply", reply: { id: "edit_email", title: "Editar E-mail" } },
-                { type: "reply", reply: { id: "edit_block", title: "Editar Bloco" } },
-                { type: "reply", reply: { id: "edit_unit", title: "Editar Unidade" } }
+                { type: "reply", reply: { id: "edit_data", title: "Refazer" } }
             ]);
             break;
     }
@@ -467,9 +585,9 @@ Está tudo correto?`;
 
 // Handle main menu
 async function showMainMenu(phone) {
-    const menuMessage = `Agora sim, podemos começar! Como posso ajudar hoje?`;
+    const menuMessage = `Como posso ajudar hoje?`;
     
-    await sendWhatsAppMessageWithButtons(phone, menuMessage, [
+    await sendWhatsAppInteractiveMessage(phone, menuMessage, [
         { type: "reply", reply: { id: "new_occurrence", title: "1️⃣ 🆕 Registrar Nova Ocorrência" } },
         { type: "reply", reply: { id: "view_occurrences", title: "2️⃣ 🔎 Consultar Minhas Ocorrências" } }
     ]);
@@ -478,32 +596,39 @@ async function showMainMenu(phone) {
 // Handle occurrence registration
 async function handleOccurrenceRegistration(phone, message, messageType = 'text') {
     const currentState = getCurrentState(phone);
-    
-    if (currentState === 'mainMenu' && message === "1") {
+    const context = getContextData(phone);
+
+    console.log(`Handling occurrence registration for ${phone}, current state: ${currentState}, message: ${message}`);
+
+    if (currentState === 'mainMenu' && message === "new_occurrence") {
         await sendWhatsAppMessage(phone, "Entendido. Para iniciar o registro, por favor, descreva em detalhes o que aconteceu. Tente incluir o local exato, se possível.\n\n*Ex: O elevador social do Bloco A não está funcionando.*");
-        sendEvent(phone, 'START_OCCURRENCE');
+        context.occurrenceData = {};
+        sendEvent(phone, 'START_OCCURRENCE', context.occurrenceData);
     } else if (currentState === 'waitingOccurrenceDescription') {
         sendEvent(phone, 'PROVIDE_DESCRIPTION', message);
         
         const mediaMessage = `Ótimo, obrigado pela descrição. Se tiver uma foto que ajude a ilustrar o problema, pode me enviar agora. Caso não tenha, é só selecionar "não tenho".`;
         
-        await sendWhatsAppMessageWithButtons(phone, mediaMessage, [
+        await sendWhatsAppInteractiveMessage(phone, mediaMessage, [
             { type: "reply", reply: { id: "no_media", title: "Não tenho" } }
         ]);
     } else if (currentState === 'waitingOccurrenceMedia') {
         let mediaUrl = null;
         
-        if (messageType === 'image' && message !== "não tenho") {
+        if (messageType === 'image' && message !== "no_media") {
             mediaUrl = message; // In real implementation, this would be the media URL
             await sendWhatsAppMessage(phone, "Perfeito, imagem recebida!");
             sendEvent(phone, 'PROVIDE_MEDIA', mediaUrl);
-        } else if (message === "não tenho") {
+        } else if (message === "no_media") {
             sendEvent(phone, 'NO_MEDIA');
+        } else {
+            console.log(`!!! Unhandled message from ${phone} in ${currentState}:`, message);
         }
         
         // Create occurrence
         const protocol = generateProtocol();
         const user = users.get(phone);
+        console.log(`Creating occurrence for user ${phone} with protocol ${protocol}`, user);
         const context = getContextData(phone);
         const occurrence = {
             protocol,
@@ -531,12 +656,15 @@ ${APP_INVITATION}`;
         
         // Return to main menu
         setTimeout(() => showMainMenu(phone), 2000);
+    } else {
+        console.log(`!!! ${currentState} - Unhandled state in occurrence registration for ${phone}:`, message);
     }
 }
 
 // Handle occurrence viewing
 async function handleOccurrenceViewing(phone) {
     const userOccurrences = Array.from(occurrences.values()).filter(occ => occ.userId === phone);
+    console.log(`Handling occurrence viewing for ${phone}, found ${userOccurrences.length} occurrences`);
     
     if (userOccurrences.length === 0) {
         await sendWhatsAppMessage(phone, "Boas notícias! Verifiquei aqui e você não possui nenhuma ocorrência em aberto no momento. 😊");
@@ -577,6 +705,7 @@ async function handleOccurrenceViewing(phone) {
     
     await sendWhatsAppMessage(phone, message);
     sendEvent(phone, 'VIEW_OCCURRENCES');
+    
     setTimeout(() => {
         sendEvent(phone, 'BACK_TO_MENU');
         showMainMenu(phone);
@@ -602,20 +731,15 @@ app.get("/webhook", (req, res) => {
 async function processMessage(phone, message, messageType = 'text') {
     const user = users.get(phone);
     const currentState = getCurrentState(phone);
+    const context = getContextData(phone);
+    if (user) {
+        context.userData = user;
+    }
     
+    console.log('----------------------------------------------------------------');
     console.log(`Processing message from ${phone}: ${message} (type: ${messageType})`);
     console.log(`User status: ${user ? user.status : 'not found'}, Terms accepted: ${user ? user.termsAccepted : false}`);
     console.log(`Current XState: ${currentState}`);
-    
-    // Handle error/unknown commands for approved users
-    if (message && !['aceito', 'não aceito', '1', '2'].includes(message.toLowerCase()) && 
-        currentState === 'mainMenu') {
-        await sendWhatsAppMessage(phone, `Desculpe, não entendi essa opção. Por favor, escolha um dos itens do menu digitando o número correspondente.
-
-1️⃣ 🆕 Registrar Nova Ocorrência
-2️⃣ 🔎 Consultar Minhas Ocorrências`);
-        return;
-    }
     
     // Check if user needs to accept terms first
     if (needsTermsAcceptance(user)) {
@@ -623,19 +747,22 @@ async function processMessage(phone, message, messageType = 'text') {
         return;
     }
     
-    // Check if user is approved
-    if (user && user.status !== USER_STATUS.APPROVED) {
+    console.log('// Check if user is approved', user);
+    if (!waitingRegistration(currentState) && currentState !== 'waitingDataConfirmation' && user && user.status !== USER_STATUS.APPROVED) {
+        console.log(`waiting registration approval. user status: ${user.status}`, user);
         if (user.status === USER_STATUS.REGISTRATION_PENDING) {
             await sendWhatsAppMessage(phone, "Sua solicitação de cadastro está sendo analisada pela administração. Você receberá uma notificação assim que for aprovada. Obrigado pela paciência!");
             sendEvent(phone, 'PENDING');
         } else if (user.status === USER_STATUS.REJECTED) {
             await sendWhatsAppMessage(phone, "Sua solicitação de cadastro foi rejeitada pela administração. Por favor, entre em contato diretamente com a administração para esclarecer a situação.");
             sendEvent(phone, 'REJECTED');
+        } else {
+            console.log(`User ${phone} is ${user.status} (unhandled). Current state: ${currentState}`);
         }
         return;
     }
     
-    // Handle conversation flows based on current state
+    console.log('// Handle conversation flows based on current state', currentState);
     if (currentState === 'checkingUserStatus') {
         // User is approved and no active conversation - show main menu
         sendEvent(phone, 'APPROVED');
@@ -645,34 +772,28 @@ async function processMessage(phone, message, messageType = 'text') {
     
     switch (currentState) {
         case 'waitingDataConfirmation':
-            if (message === "1" || message === "sim, estão corretas") {
+            if (message === "data_correct" || message === "sim, estão corretas") {
                 // Data confirmed - approve user
                 user.status = USER_STATUS.APPROVED;
                 sendEvent(phone, 'CONFIRM_DATA');
                 await showMainMenu(phone);
-            } else if (message === "2" || message === "não, quero corrigir") {
+            } else if (message === "edit_data" || message === "não, quero corrigir") {
                 // User wants to edit data - start registration flow
                 sendEvent(phone, 'EDIT_DATA');
                 await handleNewUserRegistration(phone);
             } else if (message === "confirm_registration") {
                 // New user registration confirmed
-                const data = getContextData(phone).userData;
+                const user = context.userData;
+                user.status = USER_STATUS.APPROVAL_PENDING;
                 
                 // Create new user with pending status
-                users.set(phone, {
-                    phone,
-                    name: data.name,
-                    email: data.email,
-                    block: data.block,
-                    unit: data.unit,
-                    status: USER_STATUS.REGISTRATION_PENDING,
-                    termsAccepted: true,
-                    termsVersion: "1.0",
-                    termsAcceptedAt: new Date()
-                });
+                console.log(`Creating new user with phone: ${phone}, data:`, user);
+                users.set(phone, user);
                 
                 await sendWhatsAppMessage(phone, "Perfeito! ✅\nSua solicitação de cadastro foi enviada com sucesso para a administração do condomínio. Você receberá uma nova mensagem por aqui assim que seu acesso for aprovado. Geralmente, isso leva algumas horas. Agradecemos a sua paciência!");
                 sendEvent(phone, 'SUBMIT_REGISTRATION');
+            } else {
+                console.log(`User ${phone} (waitingDataConfirmation) - unhandled message: ${message}`);
             }
             break;
             
@@ -684,10 +805,13 @@ async function processMessage(phone, message, messageType = 'text') {
             break;
             
         case 'mainMenu':
-            if (message === "1") {
+            if (message === "new_occurrence" || message === "1") {
                 await handleOccurrenceRegistration(phone, message);
-            } else if (message === "2") {
+            } else if (message === "view_occurrences" || message === "2") {
                 await handleOccurrenceViewing(phone);
+            } else {
+                await sendWhatsAppMessage(phone, "Desculpe, não entendi essa opção. Por favor, escolha um dos itens do menu digitando o número correspondente.");
+                setTimeout(() => showMainMenu(phone), 2000);
             }
             break;
             
@@ -731,11 +855,14 @@ async function processMessage(phone, message, messageType = 'text') {
             break;
             
         default:
-            // Unknown state - reset to main menu for approved users
-            if (user && user.status === USER_STATUS.APPROVED) {
-                sendEvent(phone, 'APPROVED');
-                await showMainMenu(phone);
-            }
+            // Handle error/unknown commands for approved users
+            await sendWhatsAppMessage(phone, `Desculpe, não entendi essa opção. Por favor, escolha um dos itens do menu digitando o número correspondente.`);
+
+            // // Unknown state - reset to main menu for approved users
+            // if (user && user.status === USER_STATUS.APPROVED) {
+            //     sendEvent(phone, 'APPROVED');
+            //     await showMainMenu(phone);
+            // }
             break;
     }
 }
@@ -764,42 +891,15 @@ app.post("/webhook", async (req, res) => {
             // Handle button responses
             if (message.interactive.button_reply) {
                 const buttonId = message.interactive.button_reply.id;
-                switch (buttonId) {
-                    case "accept_terms":
-                        msgBody = "aceito";
-                        break;
-                    case "reject_terms":
-                        msgBody = "não aceito";
-                        break;
-                    case "data_correct":
-                        msgBody = "1";
-                        break;
-                    case "data_incorrect":
-                        msgBody = "2";
-                        break;
-                    case "new_occurrence":
-                        msgBody = "1";
-                        break;
-                    case "view_occurrences":
-                        msgBody = "2";
-                        break;
-                    case "no_media":
-                        msgBody = "não tenho";
-                        break;
-                    case "confirm_registration":
-                        msgBody = "confirm_registration";
-                        break;
-                    case "feedback_excellent":
-                    case "feedback_good":
-                    case "feedback_regular":
-                    case "feedback_bad":
-                    case "feedback_terrible":
-                        msgBody = buttonId;
-                        break;
-                    default:
-                        msgBody = buttonId;
-                }
+                msgBody = buttonId;
+            } else if (message.interactive.list_reply) {
+                const listRowId = message.interactive.list_reply.id;
+                msgBody = listRowId;
+            } else {
+                console.log(`!!! Unhandled interactive message from ${from}:`, message.interactive);
             }
+        } else {
+            console.log(`!!! Unhandled message type from ${from}:`, message);
         }
 
         if (msgBody) {
@@ -832,7 +932,7 @@ setInterval(() => {
 }, 30 * 60 * 1000); // Run every 30 minutes
 
 // API endpoints for external systems to trigger notifications
-app.post("/api/user/approve", async (req, res) => {
+app.post("/api/users/approve", async (req, res) => {
     const { phone } = req.body;
     const user = users.get(phone);
     
@@ -849,13 +949,13 @@ Seja muito bem-vindo(a)!
 
 Como posso ajudar hoje?`;
 
-        await sendWhatsAppMessageWithButtons(phone, approvalMessage, [
-            { type: "reply", reply: { id: "new_occurrence", title: "1️⃣ 🆕 Registrar Nova Ocorrência" } },
-            { type: "reply", reply: { id: "view_occurrences", title: "2️⃣ 🔎 Consultar Minhas Ocorrências" } }
+        await sendWhatsAppInteractiveMessage(phone, approvalMessage, [
+            { type: "reply", reply: { id: "new_occurrence", title: "1️⃣ 🆕 Nova Ocorrência" } },
+            { type: "reply", reply: { id: "view_occurrences", title: "2️⃣ 🔎 Ver Ocorrências" } }
         ]);
         
         // Send approval event to state machine
-        sendEvent(phone, 'APPROVE_USER');
+        sendEvent(phone, 'APPROVE_USER', user);
         
         res.json({ success: true });
     } else {
@@ -863,7 +963,7 @@ Como posso ajudar hoje?`;
     }
 });
 
-app.post("/api/user/reject", async (req, res) => {
+app.post("/api/users/reject", async (req, res) => {
     const { phone } = req.body;
     const user = users.get(phone);
     
@@ -887,7 +987,7 @@ Por favor, entre em contato diretamente com a administração para esclarecer a 
     }
 });
 
-app.post("/api/occurrence/update", async (req, res) => {
+app.post("/api/occurrences/update", async (req, res) => {
     const { protocol, status, comment } = req.body;
     const occurrence = occurrences.get(protocol);
     
@@ -929,7 +1029,7 @@ ${comment ? `**Comentário da gestão:** "${comment}"` : ''}`;
 
 Gostaríamos de saber sua opinião:`;
 
-                await sendWhatsAppMessageWithButtons(occurrence.userId, feedbackMessage, [
+                await sendWhatsAppInteractiveMessage(occurrence.userId, feedbackMessage, [
                     { type: "reply", reply: { id: "feedback_excellent", title: "1️⃣ Excelente" } },
                     { type: "reply", reply: { id: "feedback_good", title: "2️⃣ Bom" } },
                     { type: "reply", reply: { id: "feedback_regular", title: "3️⃣ Regular" } },
@@ -958,6 +1058,60 @@ app.get("/api/users", (req, res) => {
     res.json(userList);
 });
 
+// Test list message endpoint
+app.post("/api/test-list", async (req, res) => {
+    const { phone } = req.body;
+    
+    if (!phone) {
+        return res.status(400).json({ error: "Phone number required" });
+    }
+
+    // Example list message
+    const sections = [
+        {
+            title: "Main Options",
+            rows: [
+                {
+                    id: "new_occurrence",
+                    title: "🆕 Nova Ocorrência",
+                    description: "Registrar uma nova ocorrência no condomínio"
+                },
+                {
+                    id: "view_occurrences", 
+                    title: "🔎 Ver Ocorrências",
+                    description: "Consultar suas ocorrências registradas"
+                }
+            ]
+        },
+        {
+            title: "Other Options",
+            rows: [
+                {
+                    id: "contact_admin",
+                    title: "📞 Contatar Administração",
+                    description: "Falar diretamente com a administração"
+                },
+                {
+                    id: "help",
+                    title: "❓ Ajuda",
+                    description: "Como usar este sistema"
+                }
+            ]
+        }
+    ];
+
+    await sendWhatsAppListMessage(
+        phone,
+        "Escolha uma das opções abaixo:",
+        "Ver opções",
+        sections,
+        "Menu Principal",
+        "Selecione a opção desejada"
+    );
+
+    res.json({ success: true, message: "List message sent" });
+});
+
 app.get("/api/occurrences", (req, res) => {
     const occurrenceList = Array.from(occurrences.entries()).map(([protocol, occurrence]) => ({
         protocol,
@@ -983,9 +1137,9 @@ app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log("WhatsApp Bot with XState is ready to receive messages!");
     console.log(`\nAPI Endpoints available:`);
-    console.log(`POST /api/user/approve - Approve user registration`);
-    console.log(`POST /api/user/reject - Reject user registration`);
-    console.log(`POST /api/occurrence/update - Update occurrence status`);
+    console.log(`POST /api/users/approve - Approve user registration`);
+    console.log(`POST /api/users/reject - Reject user registration`);
+    console.log(`POST /api/occurrences/update - Update occurrence status`);
     console.log(`GET /api/users - List all users`);
     console.log(`GET /api/occurrences - List all occurrences`);
     console.log(`GET /api/conversations - List active XState machines`);

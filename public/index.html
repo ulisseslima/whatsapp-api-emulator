@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Mock Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #075E54 0%, #128C7E 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #075E54;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #128C7E;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .chat-info h3 {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .chat-info p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .controls {
+            background: #f0f0f0;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .phone-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-buttons button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            background: #25D366;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .control-buttons button:hover {
+            background: #128C7E;
+        }
+
+        .control-buttons button.clear {
+            background: #dc3545;
+        }
+
+        .control-buttons button.clear:hover {
+            background: #c82333;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #e5ddd5;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            max-width: 80%;
+        }
+
+        .message.outgoing {
+            margin-left: auto;
+            justify-content: flex-end;
+        }
+
+        .message.incoming {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            padding: 8px 12px;
+            border-radius: 10px;
+            position: relative;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .message.outgoing .message-bubble {
+            background: #DCF8C6;
+            border-bottom-right-radius: 3px;
+        }
+
+        .message.incoming .message-bubble {
+            background: white;
+            border-bottom-left-radius: 3px;
+        }
+
+        .message-content {
+            margin-bottom: 5px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            text-align: right;
+        }
+
+        .message.incoming .message-time {
+            text-align: left;
+        }
+
+        .interactive-buttons {
+            margin-top: 10px;
+        }
+
+        .interactive-button {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border: 1px solid #25D366;
+            background: white;
+            color: #25D366;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .interactive-button:hover {
+            background: #25D366;
+            color: white;
+        }
+
+        .interactive-list {
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .list-header {
+            background: #f8f9fa;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .list-section {
+            border-bottom: 1px solid #eee;
+        }
+
+        .list-section:last-child {
+            border-bottom: none;
+        }
+
+        .list-section-title {
+            background: #f1f3f4;
+            padding: 8px 12px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .list-row {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-row:last-child {
+            border-bottom: none;
+        }
+
+        .list-row:hover {
+            background: #f8f9fa;
+        }
+
+        .list-row-content {
+            flex: 1;
+        }
+
+        .list-row-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+            color: #333;
+        }
+
+        .list-row-description {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.3;
+        }
+
+        .list-row-arrow {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .input-container {
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .send-button {
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .send-button:hover {
+            background: #128C7E;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            font-style: italic;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .connection-status {
+            padding: 5px 10px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .connection-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 480px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="profile-pic">🤖</div>
+            <div class="chat-info">
+                <h3>WhatsApp Bot</h3>
+                <p id="connection-status">Connecting...</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input 
+                type="text" 
+                id="phone-input" 
+                class="phone-input" 
+                placeholder="Enter phone number (e.g., 5511999999999)"
+                value="5511999999999"
+            >
+            <div class="control-buttons">
+                <button onclick="clearMessages()" class="clear">Clear Chat</button>
+                <button onclick="startConversation()">Start Chat</button>
+                <button onclick="testListMessage()">Test List</button>
+            </div>
+        </div>
+
+        <div id="connection-indicator" class="connection-status disconnected">
+            Disconnected
+        </div>
+
+        <div class="messages-container" id="messages">
+            <!-- Messages will be populated here -->
+        </div>
+
+        <div class="typing-indicator" id="typing">
+            Bot is typing...
+        </div>
+
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="message-input" 
+                class="message-input" 
+                placeholder="Type a message..."
+                onkeypress="handleKeyPress(event)"
+            >
+            <button class="send-button" onclick="sendMessage()">
+                ➤
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let currentPhone = '';
+        let isConnected = false;
+
+        function initializeEventSource() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource('/events');
+            
+            eventSource.onopen = function() {
+                isConnected = true;
+                updateConnectionStatus();
+            };
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'initial') {
+                    renderMessages(data.messages);
+                } else if (data.type === 'message') {
+                    addMessage(data.message);
+                } else if (data.type === 'clear') {
+                    clearMessagesDisplay();
+                }
+            };
+
+            eventSource.onerror = function() {
+                isConnected = false;
+                updateConnectionStatus();
+            };
+        }
+
+        function updateConnectionStatus() {
+            const indicator = document.getElementById('connection-indicator');
+            const status = document.getElementById('connection-status');
+            
+            if (isConnected) {
+                indicator.className = 'connection-status connected';
+                indicator.textContent = 'Connected';
+                status.textContent = 'Online';
+            } else {
+                indicator.className = 'connection-status disconnected';
+                indicator.textContent = 'Disconnected';
+                status.textContent = 'Offline';
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('messages');
+            container.innerHTML = '';
+            
+            messages.forEach(message => {
+                addMessage(message, false);
+            });
+        }
+
+        function addMessage(message, scrollToBottom = true) {
+            const container = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.direction}`;
+            
+            let content = '';
+            
+            if (message.interactive && message.interactive.action && message.interactive.action.buttons) {
+                console.log('// Bot message with buttons');
+
+                // replace message.body \n with <br>
+                message.body = message.body.replace(/\n/g, '<br>');
+
+                content = `
+                    <div class="message-bubble">
+                        <div class="message-content">
+                            ${message.body}
+                        </div>
+                        <div class="interactive-buttons">
+                            ${message.interactive.action.buttons.map(button => 
+                                `<button class="interactive-button" onclick="sendButtonResponse('${button.reply.id}', '${button.reply.title}')">${button.reply.title}</button>`
+                            ).join('')}
+                        </div>
+                        <div class="message-time">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
+                `;
+            } else if (message.interactive && message.interactive.action && message.interactive.action.sections) {
+                console.log('// Bot message with list');
+                const sections = message.interactive.action.sections;
+                const header = message.interactive.header?.text || '';
+                const body = message.interactive.body?.text || message.body || '';
+                const footer = message.interactive.footer?.text || '';
+                const buttonText = message.interactive.action.button || 'Select an option';
+                
+                content = `
+                    <div class="message-bubble">
+                        ${header ? `<div class="message-content"><strong>${header}</strong></div>` : ''}
+                        <div class="message-content">${body}</div>
+                        <div class="interactive-list">
+                            <div class="list-header">${buttonText}</div>
+                            ${sections.map(section => `
+                                <div class="list-section">
+                                    ${section.title ? `<div class="list-section-title">${section.title}</div>` : ''}
+                                    ${section.rows.map(row => `
+                                        <div class="list-row" onclick="sendListResponse('${row.id}', '${row.title}')">
+                                            <div class="list-row-content">
+                                                <div class="list-row-title">${row.title}</div>
+                                                ${row.description ? `<div class="list-row-description">${row.description}</div>` : ''}
+                                            </div>
+                                            <div class="list-row-arrow">›</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${footer ? `<div class="message-content" style="font-size: 12px; color: #666; margin-top: 10px;">${footer}</div>` : ''}
+                        <div class="message-time">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
+                `;
+            } else {
+                console.log('// Regular message');
+                content = `
+                    <div class="message-bubble">
+                        <div class="message-content">${message.body || message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || 'Media message'}</div>
+                        <div class="message-time">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
+                `;
+            }
+            
+            messageDiv.innerHTML = content;
+            container.appendChild(messageDiv);
+            
+            if (scrollToBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+
+            // Show typing indicator for outgoing messages
+            if (message.direction === 'incoming') {
+                showTypingIndicator();
+                setTimeout(hideTypingIndicator, 1500);
+            }
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typing').style.display = 'block';
+            const container = document.getElementById('messages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typing').style.display = 'none';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            const phone = document.getElementById('phone-input').value.trim();
+            
+            if (!message || !phone) return;
+            
+            try {
+                const response = await fetch('/api/send-user-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        from: phone,
+                        message: message,
+                        messageType: 'text'
+                    })
+                });
+                
+                if (response.ok) {
+                    input.value = '';
+                    currentPhone = phone;
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+        async function sendButtonResponse(buttonId, title) {
+            const phone = document.getElementById('phone-input').value.trim();
+            
+            if (!phone) return;
+            
+            try {
+                const response = await fetch('/api/send-user-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        from: phone,
+                        message: title,
+                        messageType: 'interactive',
+                        buttonId: buttonId
+                    })
+                });
+                
+                if (response.ok) {
+                    currentPhone = phone;
+                }
+            } catch (error) {
+                console.error('Error sending button response:', error);
+            }
+        }
+
+        async function sendListResponse(listRowId, title) {
+            const phone = document.getElementById('phone-input').value.trim();
+            
+            if (!phone) return;
+            
+            try {
+                const response = await fetch('/api/send-user-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        from: phone,
+                        message: title,
+                        messageType: 'interactive',
+                        listRowId: listRowId
+                    })
+                });
+                
+                if (response.ok) {
+                    currentPhone = phone;
+                }
+            } catch (error) {
+                console.error('Error sending list response:', error);
+            }
+        }
+
+        async function clearMessages() {
+            try {
+                const response = await fetch('/api/messages', {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    clearMessagesDisplay();
+                }
+            } catch (error) {
+                console.error('Error clearing messages:', error);
+            }
+        }
+
+        function clearMessagesDisplay() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        function startConversation() {
+            const phone = document.getElementById('phone-input').value.trim();
+            if (!phone) {
+                alert('Please enter a phone number');
+                return;
+            }
+            
+            // Send initial "Olá" message to start the conversation
+            document.getElementById('message-input').value = 'Olá';
+            sendMessage();
+        }
+
+        async function testListMessage() {
+            const phone = document.getElementById('phone-input').value.trim();
+            if (!phone) {
+                alert('Please enter a phone number');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/test-list', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: phone
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Test list message sent');
+                } else {
+                    console.error('Failed to send test list message');
+                }
+            } catch (error) {
+                console.error('Error sending test list message:', error);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            initializeEventSource();
+            
+            // Auto-focus message input
+            document.getElementById('message-input').focus();
+        });
+
+        // Reconnect on page focus
+        window.addEventListener('focus', function() {
+            if (!isConnected) {
+                initializeEventSource();
+            }
+        });
+    </script>
+</body>
+</html>

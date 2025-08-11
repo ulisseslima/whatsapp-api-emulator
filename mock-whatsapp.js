@@ -14,7 +14,7 @@ let messageId = 1;
 // Mock WhatsApp API endpoint
 app.post('/:version/:phoneNumberId/messages', (req, res) => {
     const { phoneNumberId } = req.params;
-    const { messaging_product, to, text, type, interactive } = req.body;
+    const { messaging_product, to, text, type, interactive, status } = req.body;
 
     console.log('<--- Mock called:', JSON.stringify(req.body, null, 2));
 
@@ -26,7 +26,7 @@ app.post('/:version/:phoneNumberId/messages', (req, res) => {
         timestamp: Date.now(),
         type: type || 'text',
         messaging_product,
-        body: text?.body || interactive?.body?.text || 'n/a',
+        body: text?.body || interactive?.body?.text || `n/a (${type}/${status})`,
         interactive: interactive || null,
         direction: 'outgoing'
     };

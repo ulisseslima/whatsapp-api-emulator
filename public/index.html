@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Mock Interface</title>
-    <style>
+    <style type="text/css">
         * {
             margin: 0;
             padding: 0;
@@ -22,8 +22,8 @@
 
         .chat-container {
             width: 100%;
-            max-width: 400px;
-            height: 600px;
+            max-width: 768px;
+            height: 768px;
             background: white;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -290,8 +290,8 @@
             background: #128C7E;
         }
 
-        .typing-indicator {
-            display: none;
+        #typing-indicator {
+            visibility: hidden;
             padding: 15px 20px;
             font-style: italic;
             color: #666;
@@ -314,7 +314,7 @@
             color: #721c24;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 800px) {
             .chat-container {
                 height: 100vh;
                 border-radius: 0;
@@ -356,7 +356,7 @@
             <!-- Messages will be populated here -->
         </div>
 
-        <div class="typing-indicator" id="typing">
+        <div id="typing-indicator">
             Bot is typing...
         </div>
 
@@ -517,13 +517,13 @@
         }
 
         function showTypingIndicator() {
-            document.getElementById('typing').style.display = 'block';
+            document.getElementById('typing-indicator').style.visibility = 'visible';
             const container = document.getElementById('messages');
             container.scrollTop = container.scrollHeight;
         }
 
         function hideTypingIndicator() {
-            document.getElementById('typing').style.display = 'none';
+            document.getElementById('typing-indicator').style.visibility = 'hidden';
         }
 
         async function sendMessage() {

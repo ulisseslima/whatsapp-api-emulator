@@ -126,7 +126,7 @@ app.post('/api/send-user-message', (req, res) => {
     
     // Create incoming message
     const incomingMessage = {
-        id: `user_msg_${messageId++}`,
+        id: `emulated_msg_${messageId++}`,
         from: from,
         to: process.env.PHONE_NUMBER_ID || 'mock_bot',
         timestamp: Date.now(),

@@ -290,6 +290,285 @@
             background: #128C7E;
         }
 
+        .attach-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .attach-button:hover {
+            background: #5a6268;
+        }
+
+        .contact-button {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .contact-button:hover {
+            background: #138496;
+        }
+
+        .contact-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .contact-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .contact-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .contact-modal h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .contact-form input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .contact-form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .contact-form-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .contact-send {
+            background: #25D366;
+            color: white;
+        }
+
+        .contact-send:hover {
+            background: #128C7E;
+        }
+
+        .contact-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .contact-cancel:hover {
+            background: #5a6268;
+        }
+
+        .contact-message {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            margin-bottom: 5px;
+        }
+
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #25D366;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .contact-phone {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .contact-email {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-preview {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-preview.show {
+            display: flex;
+        }
+
+        .file-preview img {
+            max-width: 60px;
+            max-height: 60px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .file-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .file-remove:hover {
+            background: #c82333;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .upload-progress.show {
+            display: block;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: #25D366;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .media-message img,
+        .media-message video {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .audio-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .audio-message audio {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .audio-icon {
+            font-size: 20px;
+            color: #25D366;
+        }
+
+        .document-message {
+            font-family: inherit;
+        }
+
+        .document-message a {
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .document-message a:hover {
+            background: #128C7E !important;
+        }
+
         #typing-indicator {
             visibility: hidden;
             padding: 15px 20px;
@@ -362,6 +641,30 @@
 
         <div class="input-container">
             <input 
+                type="file" 
+                id="file-input" 
+                class="file-input"
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                onchange="handleFileSelect(event)"
+            >
+            <div class="file-preview" id="file-preview">
+                <img id="file-thumbnail" src="" alt="File preview" style="display: none;">
+                <div class="file-info">
+                    <div class="file-name" id="file-name"></div>
+                    <div class="file-size" id="file-size"></div>
+                </div>
+                <button class="file-remove" onclick="removeFile()" title="Remove file">×</button>
+            </div>
+            <div class="upload-progress" id="upload-progress">
+                <div class="upload-progress-bar" id="upload-progress-bar"></div>
+            </div>
+            <button class="contact-button" onclick="showContactModal()" title="Send contact">
+                👤
+            </button>
+            <button class="attach-button" onclick="triggerFileSelect()" title="Attach file">
+                📎
+            </button>
+            <input 
                 type="text" 
                 id="message-input" 
                 class="message-input" 
@@ -372,12 +675,30 @@
                 ➤
             </button>
         </div>
+
+        <!-- Contact Modal -->
+        <div class="contact-modal" id="contact-modal">
+            <div class="contact-modal-content">
+                <h3>📞 Send Contact</h3>
+                <div class="contact-form">
+                    <input type="text" id="contact-name" placeholder="Full Name *" required>
+                    <input type="tel" id="contact-phone" placeholder="Phone Number (with country code) *" required>
+                    <input type="email" id="contact-email" placeholder="Email (optional)">
+                    <input type="text" id="contact-organization" placeholder="Organization (optional)">
+                </div>
+                <div class="contact-form-buttons">
+                    <button class="contact-cancel" onclick="hideContactModal()">Cancel</button>
+                    <button class="contact-send" onclick="sendContact()">Send Contact</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         let eventSource = null;
         let currentPhone = '';
         let isConnected = false;
+        let selectedFile = null;
 
         function initializeEventSource() {
             if (eventSource) {
@@ -494,9 +815,82 @@
                 `;
             } else {
                 console.log('// Regular message');
+                let messageContent = '';
+                
+                // Handle different message types
+                if (message.type === 'image' && message.mediaUrl) {
+                    messageContent = `
+                        <div class="media-message">
+                            <img src="${message.mediaUrl}" alt="Image" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 5px;">
+                            ${message.caption ? `<div style="margin-top: 5px;">${message.caption}</div>` : ''}
+                        </div>
+                    `;
+                } else if (message.type === 'video' && message.mediaUrl) {
+                    messageContent = `
+                        <div class="media-message">
+                            <video controls style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 5px;">
+                                <source src="${message.mediaUrl}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            ${message.caption ? `<div style="margin-top: 5px;">${message.caption}</div>` : ''}
+                        </div>
+                    `;
+                } else if (message.type === 'audio' && message.mediaUrl) {
+                    const fileName = message.fileName || 'Audio';
+                    const fileSize = message.fileSize ? ` (${message.fileSize})` : '';
+                    messageContent = `
+                        <div class="audio-message">
+                            <div class="audio-icon">🎵</div>
+                            <div style="flex: 1;">
+                                <audio controls style="width: 100%; max-width: 200px;">
+                                    <source src="${message.mediaUrl}" type="audio/mpeg">
+                                    <source src="${message.mediaUrl}" type="audio/wav">
+                                    <source src="${message.mediaUrl}" type="audio/ogg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                                <div style="font-size: 12px; color: #666; margin-top: 2px;">${fileName}${fileSize}</div>
+                            </div>
+                        </div>
+                        ${message.caption ? `<div style="margin-top: 5px;">${message.caption}</div>` : ''}
+                    `;
+                } else if (message.type === 'document' && message.mediaUrl) {
+                    const fileName = message.fileName || 'Document';
+                    const fileSize = message.fileSize ? ` (${message.fileSize})` : '';
+                    messageContent = `
+                        <div class="document-message">
+                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 5px;">
+                                <div style="font-size: 20px;">📄</div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: bold; margin-bottom: 2px;">${fileName}</div>
+                                    <div style="font-size: 12px; color: #666;">${fileSize}</div>
+                                </div>
+                                <a href="${message.mediaUrl}" download="${fileName}" style="background: #25D366; color: white; padding: 5px 10px; border-radius: 15px; text-decoration: none; font-size: 12px;">Download</a>
+                            </div>
+                            ${message.caption ? `<div style="margin-top: 5px;">${message.caption}</div>` : ''}
+                        </div>
+                    `;
+                } else if (message.type === 'contact' && message.contact) {
+                    const contact = message.contact;
+                    const initials = contact.name ? contact.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '👤';
+                    messageContent = `
+                        <div class="contact-message">
+                            <div class="contact-avatar">${initials}</div>
+                            <div class="contact-info">
+                                <div class="contact-name">${contact.name || 'Unknown Contact'}</div>
+                                ${contact.phones && contact.phones.length > 0 ? `<div class="contact-phone">📞 ${contact.phones[0].phone}</div>` : ''}
+                                ${contact.emails && contact.emails.length > 0 ? `<div class="contact-email">✉️ ${contact.emails[0].email}</div>` : ''}
+                                ${contact.org && contact.org.company ? `<div class="contact-email">🏢 ${contact.org.company}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Regular text message
+                    messageContent = message.body || message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || 'Media message';
+                }
+                
                 content = `
                     <div class="message-bubble">
-                        <div class="message-content">${message.body || message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || 'Media message'}</div>
+                        <div class="message-content">${messageContent}</div>
                         <div class="message-time">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     </div>
                 `;
@@ -531,29 +925,237 @@
             const message = input.value.trim();
             const phone = document.getElementById('phone-input').value.trim();
             
-            if (!message || !phone) return;
+            if ((!message && !selectedFile) || !phone) return;
             
             try {
-                const response = await fetch('/api/send-user-message', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        from: phone,
-                        message: message,
-                        messageType: 'text'
-                    })
-                });
-                
-                if (response.ok) {
-                    input.value = '';
-                    currentPhone = phone;
+                if (selectedFile) {
+                    // Send file message
+                    await sendFileMessage(phone, message, selectedFile);
+                } else {
+                    // Send text message
+                    const response = await fetch('/api/send-user-message', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            from: phone,
+                            message: message,
+                            messageType: 'text'
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        input.value = '';
+                        currentPhone = phone;
+                    }
                 }
             } catch (error) {
                 console.error('Error sending message:', error);
             }
         }
+
+        async function sendFileMessage(phone, caption, file) {
+            const formData = new FormData();
+            formData.append('from', phone);
+            formData.append('file', file);
+            formData.append('caption', caption || '');
+            formData.append('messageType', getFileMessageType(file.type));
+            
+            const progressBar = document.getElementById('upload-progress-bar');
+            const progressContainer = document.getElementById('upload-progress');
+            
+            progressContainer.classList.add('show');
+            
+            try {
+                const response = await fetch('/api/send-file-message', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    document.getElementById('message-input').value = '';
+                    removeFile();
+                    currentPhone = phone;
+                    
+                    // Simulate upload progress
+                    let progress = 0;
+                    const progressInterval = setInterval(() => {
+                        progress += 10;
+                        progressBar.style.width = progress + '%';
+                        
+                        if (progress >= 100) {
+                            clearInterval(progressInterval);
+                            setTimeout(() => {
+                                progressContainer.classList.remove('show');
+                                progressBar.style.width = '0%';
+                            }, 500);
+                        }
+                    }, 50);
+                } else {
+                    console.error('Failed to send file message');
+                    progressContainer.classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Error sending file message:', error);
+                progressContainer.classList.remove('show');
+            }
+        }
+
+        function getFileMessageType(mimeType) {
+            if (mimeType.startsWith('image/')) return 'image';
+            if (mimeType.startsWith('video/')) return 'video';
+            if (mimeType.startsWith('audio/')) return 'audio';
+            if (mimeType === 'application/pdf') return 'document';
+            if (mimeType.includes('document') || mimeType.includes('text') || mimeType.includes('word')) return 'document';
+            return 'document';
+        }
+
+        function triggerFileSelect() {
+            document.getElementById('file-input').click();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check file size (max 16MB)
+            const maxSize = 16 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File size must be less than 16MB');
+                return;
+            }
+            
+            selectedFile = file;
+            showFilePreview(file);
+        }
+
+        function showFilePreview(file) {
+            const preview = document.getElementById('file-preview');
+            const thumbnail = document.getElementById('file-thumbnail');
+            const fileName = document.getElementById('file-name');
+            const fileSize = document.getElementById('file-size');
+            
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            // Show thumbnail for images
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    thumbnail.src = e.target.result;
+                    thumbnail.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                thumbnail.style.display = 'none';
+            }
+            
+            preview.classList.add('show');
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-preview').classList.remove('show');
+            document.getElementById('file-thumbnail').style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showContactModal() {
+            document.getElementById('contact-modal').classList.add('show');
+            document.getElementById('contact-name').focus();
+        }
+
+        function hideContactModal() {
+            document.getElementById('contact-modal').classList.remove('show');
+            clearContactForm();
+        }
+
+        function clearContactForm() {
+            document.getElementById('contact-name').value = '';
+            document.getElementById('contact-phone').value = '';
+            document.getElementById('contact-email').value = '';
+            document.getElementById('contact-organization').value = '';
+        }
+
+        async function sendContact() {
+            const name = document.getElementById('contact-name').value.trim();
+            const phone = document.getElementById('contact-phone').value.trim();
+            const email = document.getElementById('contact-email').value.trim();
+            const organization = document.getElementById('contact-organization').value.trim();
+            const fromPhone = document.getElementById('phone-input').value.trim();
+            
+            if (!name || !phone || !fromPhone) {
+                alert('Name and phone number are required');
+                return;
+            }
+            
+            // Basic phone validation
+            if (!/^\+?[\d\s\-\(\)]+$/.test(phone)) {
+                alert('Please enter a valid phone number');
+                return;
+            }
+            
+            const contactData = {
+                name: name,
+                phones: [{ phone: phone, type: 'CELL' }]
+            };
+            
+            if (email) {
+                contactData.emails = [{ email: email, type: 'WORK' }];
+            }
+            
+            if (organization) {
+                contactData.org = { company: organization };
+            }
+            
+            try {
+                const response = await fetch('/api/send-contact-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        from: fromPhone,
+                        contact: contactData
+                    })
+                });
+                
+                if (response.ok) {
+                    hideContactModal();
+                    currentPhone = fromPhone;
+                } else {
+                    console.error('Failed to send contact');
+                    alert('Failed to send contact. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error sending contact:', error);
+                alert('Error sending contact. Please try again.');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('contact-modal');
+            if (event.target === modal) {
+                hideContactModal();
+            }
+        };
+
+        // Handle Enter key in contact form
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && document.getElementById('contact-modal').classList.contains('show')) {
+                sendContact();
+            }
+        });
 
         async function sendButtonResponse(buttonId, title) {
             const phone = document.getElementById('phone-input').value.trim();

@@ -1,11 +1,59 @@
 require("dotenv").config();
 const express = require('express');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 const app = express();
 const PORT = process.env.MOCK_PORT || 3001;
 
 app.use(express.json());
 app.use(express.static('public'));
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadsDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 16 * 1024 * 1024 // 16MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        // Accept images, videos, audio files, and documents
+        const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|mp3|wav|ogg|m4a|aac|flac|pdf|doc|docx|txt/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype) || 
+                        file.mimetype.startsWith('image/') || 
+                        file.mimetype.startsWith('video/') ||
+                        file.mimetype.startsWith('audio/') ||
+                        file.mimetype === 'application/pdf' ||
+                        file.mimetype.includes('document') ||
+                        file.mimetype.includes('text');
+        
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only images, videos, audio files, and documents are allowed!'));
+        }
+    }
+});
+
+// Serve uploaded files
+app.use('/uploads', express.static(uploadsDir));
 
 // In-memory storage for messages
 let messages = [];
@@ -97,6 +145,149 @@ function broadcastMessage(message) {
             console.error('Error broadcasting message:', err);
         }
     });
+}
+
+// API to send user messages with file attachments
+app.post('/api/send-file-message', upload.single('file'), (req, res) => {
+    const { from, caption, messageType } = req.body;
+    const file = req.file;
+    
+    if (!file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const mediaUrl = `http://localhost:${PORT}/uploads/${file.filename}`;
+    
+    // Create incoming message with file
+    const incomingMessage = {
+        id: `emulated_msg_${messageId++}`,
+        from: from,
+        to: process.env.PHONE_NUMBER_ID || 'mock_bot',
+        timestamp: Date.now(),
+        type: messageType || 'document',
+        body: caption || file.originalname,
+        caption: caption,
+        mediaUrl: mediaUrl,
+        fileName: file.originalname,
+        fileSize: formatFileSize(file.size),
+        direction: 'incoming'
+    };
+    
+    messages.push(incomingMessage);
+    broadcastMessage(incomingMessage);
+    
+    // Send webhook to your bot
+    const webhookPayload = {
+        entry: [{
+            changes: [{
+                value: {
+                    messages: [{
+                        from: from,
+                        timestamp: Math.floor(Date.now() / 1000),
+                        type: messageType || 'document',
+                        id: incomingMessage.id,
+                        image: messageType === 'image' ? { 
+                            id: 'mock_media_id',
+                            caption: caption,
+                            url: mediaUrl
+                        } : undefined,
+                        video: messageType === 'video' ? {
+                            id: 'mock_media_id',
+                            caption: caption,
+                            url: mediaUrl
+                        } : undefined,
+                        document: (messageType === 'document') ? {
+                            id: 'mock_media_id',
+                            caption: caption,
+                            filename: file.originalname,
+                            url: mediaUrl
+                        } : undefined,
+                        audio: messageType === 'audio' ? {
+                            id: 'mock_media_id',
+                            url: mediaUrl
+                        } : undefined
+                    }]
+                }
+            }]
+        }]
+    };
+    
+    // Send to your bot's webhook
+    const axios = require('axios');
+    const botWebhookUrl = process.env.BOT_WEBHOOK_URL || `http://localhost:3000/webhook`;
+
+    axios.post(botWebhookUrl, webhookPayload)
+        .then(response => {
+            console.log('---> File webhook sent successfully to bot', JSON.stringify(webhookPayload, null, 2));
+        })
+        .catch(error => {
+            console.error('Error sending file webhook to bot:', error.message);
+        });
+    
+    res.json({ success: true, message: incomingMessage, mediaUrl: mediaUrl });
+});
+
+// API to send contact messages
+app.post('/api/send-contact-message', (req, res) => {
+    const { from, contact } = req.body;
+    
+    if (!contact || !contact.name || !contact.phones || contact.phones.length === 0) {
+        return res.status(400).json({ error: 'Invalid contact data' });
+    }
+    
+    // Create incoming message with contact
+    const incomingMessage = {
+        id: `emulated_msg_${messageId++}`,
+        from: from,
+        to: process.env.PHONE_NUMBER_ID || 'mock_bot',
+        timestamp: Date.now(),
+        type: 'contacts',
+        body: `Contact: ${contact.name}`,
+        contact: contact,
+        direction: 'incoming'
+    };
+    
+    messages.push(incomingMessage);
+    broadcastMessage(incomingMessage);
+    
+    // Send webhook to your bot
+    const webhookPayload = {
+        entry: [{
+            changes: [{
+                value: {
+                    messages: [{
+                        from: from,
+                        timestamp: Math.floor(Date.now() / 1000),
+                        type: 'contacts',
+                        id: incomingMessage.id,
+                        contacts: [contact]
+                    }]
+                }
+            }]
+        }]
+    };
+    
+    // Send to your bot's webhook
+    const axios = require('axios');
+    const botWebhookUrl = process.env.BOT_WEBHOOK_URL || `http://localhost:3000/webhook`;
+
+    axios.post(botWebhookUrl, webhookPayload)
+        .then(response => {
+            console.log('---> Contact webhook sent successfully to bot', JSON.stringify(webhookPayload, null, 2));
+        })
+        .catch(error => {
+            console.error('Error sending contact webhook to bot:', error.message);
+        });
+    
+    res.json({ success: true, message: incomingMessage });
+});
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // API to send user messages (simulate receiving from user)

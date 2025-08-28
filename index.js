@@ -607,7 +607,7 @@ async function handleOccurrenceRegistration(phone, message, messageType = 'text'
     } else if (currentState === 'waitingOccurrenceDescription') {
         sendEvent(phone, 'PROVIDE_DESCRIPTION', message);
         
-        const mediaMessage = `Ótimo, obrigado pela descrição. Se tiver uma foto que ajude a ilustrar o problema, pode me enviar agora. Caso não tenha, é só selecionar "não tenho".`;
+        const mediaMessage = `Ótimo, obrigado pela descrição. Se tiver uma foto, vídeo, áudio, documento ou contato que ajude a ilustrar o problema, pode me enviar agora. Caso não tenha, é só selecionar "não tenho".`;
         
         await sendWhatsAppInteractiveMessage(phone, mediaMessage, [
             { type: "reply", reply: { id: "no_media", title: "Não tenho" } }
@@ -615,14 +615,20 @@ async function handleOccurrenceRegistration(phone, message, messageType = 'text'
     } else if (currentState === 'waitingOccurrenceMedia') {
         let mediaUrl = null;
         
-        if (messageType === 'image' && message !== "no_media") {
+        if ((messageType === 'image' || messageType === 'video' || messageType === 'document' || messageType === 'audio' || messageType === 'contacts') && message !== "no_media") {
             mediaUrl = message; // In real implementation, this would be the media URL
-            await sendWhatsAppMessage(phone, "Perfeito, imagem recebida!");
+            const mediaTypeText = messageType === 'image' ? 'imagem' : 
+                                 messageType === 'video' ? 'vídeo' : 
+                                 messageType === 'audio' ? 'áudio' : 
+                                 messageType === 'contacts' ? 'contato' : 'arquivo';
+            await sendWhatsAppMessage(phone, `Perfeito, ${mediaTypeText} recebido!`);
             sendEvent(phone, 'PROVIDE_MEDIA', mediaUrl);
         } else if (message === "no_media") {
             sendEvent(phone, 'NO_MEDIA');
         } else {
-            console.log(`!!! Unhandled message from ${phone} in ${currentState}:`, message);
+            // If it's a text message while waiting for media, treat it as "no media" and use the text as additional description
+            await sendWhatsAppMessage(phone, "Entendi. Informação adicional registrada.");
+            sendEvent(phone, 'NO_MEDIA', message);
         }
         
         // Create occurrence
@@ -884,6 +890,26 @@ app.post("/webhook", async (req, res) => {
         if (message.text) {
             msgBody = message.text.body;
             messageType = 'text';
+        } else if (message.image) {
+            msgBody = message.image.caption || 'Image';
+            messageType = 'image';
+            console.log(`Received image from ${from}: ${message.image.id}`);
+        } else if (message.video) {
+            msgBody = message.video.caption || 'Video';
+            messageType = 'video';
+            console.log(`Received video from ${from}: ${message.video.id}`);
+        } else if (message.document) {
+            msgBody = message.document.caption || message.document.filename || 'Document';
+            messageType = 'document';
+            console.log(`Received document from ${from}: ${message.document.id}`);
+        } else if (message.audio) {
+            msgBody = 'Audio message';
+            messageType = 'audio';
+            console.log(`Received audio from ${from}: ${message.audio.id}`);
+        } else if (message.contacts) {
+            msgBody = `Contact: ${message.contacts[0]?.name?.formatted_name || 'Unknown'}`;
+            messageType = 'contacts';
+            console.log(`Received contact from ${from}: ${message.contacts[0]?.name?.formatted_name}`);
         } else if (message.image) {
             msgBody = message.image.id; // In real implementation, download and process the image
             messageType = 'image';

@@ -1,0 +1,36 @@
+{
+    "name": "order_confirmation",
+    "previous_category": "MARKETING",
+    "parameter_format": "NAMED",
+    "components": [
+        {
+            "type": "BODY", 
+            "text": "✅ *Pedido Confirmado!*\n\nOlá, {{customer_name}}!\n\nSeu pedido foi confirmado com sucesso:\n\n🛍️ **Número do Pedido:** {{order_number}}\n💰 **Valor Total:** R$ {{total_amount}}\n🚚 **Previsão de Entrega:** {{delivery_date}}\n\nVocê receberá atualizações sobre o status da entrega.\n\nObrigado por escolher nossos serviços!",
+            "example": {
+                "body_text_named_params": [
+                    {
+                        "param_name": "customer_name",
+                        "example": "Maria Santos"
+                    },
+                    {
+                        "param_name": "order_number",
+                        "example": "#12345"
+                    },
+                    {
+                        "param_name": "total_amount",
+                        "example": "149,90"
+                    },
+                    {
+                        "param_name": "delivery_date",
+                        "example": "2-3 dias úteis"
+                    }
+                ]
+            }
+        }
+    ],
+    "language": "pt_BR",
+    "status": "APPROVED",
+    "category": "UTILITY",
+    "correct_category": "UTILITY",
+    "id": "1525665808888417"
+}

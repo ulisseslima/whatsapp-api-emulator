@@ -1,0 +1,25 @@
+{
+    "name": "acesso_app_aprovado",
+    "previous_category": "UTILITY",
+    "parameter_format": "NAMED",
+    "components": [
+        {
+            "type": "BODY",
+            "text": "*Agora você tem acesso ao app da Zind.*\n\nVocê poderá ver com mais detalhes as ocorrências e notícias do condomínio.\n\nSeu login é o e-mail e senha cadastrados na criação da conta."
+        },
+        {
+            "type": "BUTTONS",
+            "buttons": [
+                {
+                    "type": "URL",
+                    "text": "Baixar app Zind",
+                    "url": "https://zind.pro/"
+                }
+            ]
+        }
+    ],
+    "language": "pt_BR",
+    "status": "APPROVED",
+    "category": "MARKETING",
+    "id": "1481084423072629"
+}

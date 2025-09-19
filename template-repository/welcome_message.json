@@ -1,0 +1,24 @@
+{
+    "name": "welcome_message",
+    "previous_category": "MARKETING",
+    "parameter_format": "NAMED",
+    "components": [
+        {
+            "type": "BODY",
+            "text": "Olá, {{user_name}}!\n\nBem-vindo ao nosso serviço. Estamos aqui para ajudá-lo.",
+            "example": {
+                "body_text_named_params": [
+                    {
+                        "param_name": "user_name",
+                        "example": "João Silva"
+                    }
+                ]
+            }
+        }
+    ],
+    "language": "pt_BR",
+    "status": "APPROVED",
+    "category": "UTILITY",
+    "correct_category": "UTILITY",
+    "id": "1525665808888415"
+}

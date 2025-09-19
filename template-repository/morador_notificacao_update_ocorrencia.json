@@ -1,0 +1,47 @@
+{
+    "name": "morador_notificacao_update_ocorrencia",
+    "parameter_format": "NAMED",
+    "components": [
+        {
+            "type": "BODY",
+            "text": "💬 Zind - Atualização na sua ocorrência\n\nID: #{{occurrence_id}}\nStatus: Primeira Resposta\nAssunto: {{occurrence_subject}}\nÚltima Resposta: \"{{manager_response}}\"\n- {{manager_name}} (via WhatsApp)\n\nAcesse o app {{short_link}} para ver o histórico completo.",
+            "example": {
+                "body_text_named_params": [
+                    {
+                        "param_name": "occurrence_id",
+                        "example": "OC001234"
+                    },
+                    {
+                        "param_name": "occurrence_subject",
+                        "example": "Vazamento no banheiro principal."
+                    },
+                    {
+                        "param_name": "manager_response",
+                        "example": "Enviamos o encanador para verificar hoje às 14h. Por favor, aguarde na unidade."
+                    },
+                    {
+                        "param_name": "manager_name",
+                        "example": "Maria Santos"
+                    },
+                    {
+                        "param_name": "short_link",
+                        "example": "https://zind.pro"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "BUTTONS",
+            "buttons": [
+                {
+                    "type": "QUICK_REPLY",
+                    "text": "Responder"
+                }
+            ]
+        }
+    ],
+    "language": "pt_BR",
+    "status": "APPROVED",
+    "category": "UTILITY",
+    "id": "1149073133740150"
+}

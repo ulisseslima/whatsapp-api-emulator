@@ -1,0 +1,51 @@
+{
+    "name": "sindico_notificacao_nova_ocorrencia",
+    "parameter_format": "NAMED",
+    "components": [
+        {
+            "type": "BODY",
+            "text": "🚨 Zind - Nova Ocorrência Aberta\n\nID: #{{occurrence_id}}\nStatus: Aberta\nAssunto: {{occurrence_subject}}\nMorador: {{resident_name}} (Bloco/Apto. {{unit_number}})\nCondomínio: {{condo_name}}\n\nAcesse o app para detalhes, anexos e ações de gestão: {{secure_link}}\n\nZind agradece.",
+            "example": {
+                "body_text_named_params": [
+                    {
+                        "param_name": "occurrence_id",
+                        "example": "OC001234"
+                    },
+                    {
+                        "param_name": "occurrence_subject",
+                        "example": "Vazamento no banheiro principal"
+                    },
+                    {
+                        "param_name": "resident_name",
+                        "example": "João Silva"
+                    },
+                    {
+                        "param_name": "unit_number",
+                        "example": "A/101"
+                    },
+                    {
+                        "param_name": "condo_name",
+                        "example": "Residencial Portal dos Lagos"
+                    },
+                    {
+                        "param_name": "secure_link",
+                        "example": "https://zind.pro"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "BUTTONS",
+            "buttons": [
+                {
+                    "type": "QUICK_REPLY",
+                    "text": "Responder Ocorrência"
+                }
+            ]
+        }
+    ],
+    "language": "pt_BR",
+    "status": "APPROVED",
+    "category": "UTILITY",
+    "id": "764467103233975"
+}

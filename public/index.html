@@ -624,6 +624,7 @@
                 <button onclick="clearMessages()" class="clear">Clear Chat</button>
                 <button onclick="startConversation()">Start Chat</button>
                 <button onclick="testListMessage()">Test List</button>
+                <button onclick="showTemplateModal()">Send Template</button>
             </div>
         </div>
 
@@ -689,6 +690,27 @@
                 <div class="contact-form-buttons">
                     <button class="contact-cancel" onclick="hideContactModal()">Cancel</button>
                     <button class="contact-send" onclick="sendContact()">Send Contact</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template Modal -->
+        <div class="contact-modal" id="template-modal">
+            <div class="contact-modal-content" style="max-width: 500px;">
+                <h3>📋 Send Template Message</h3>
+                <div class="contact-form">
+                    <select id="template-select" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; margin-bottom: 10px;">
+                        <option value="">Select a template...</option>
+                    </select>
+                    <div id="template-preview" style="background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin: 10px 0; display: none; white-space: pre-line; font-size: 14px;"></div>
+                    <div id="template-parameters" style="display: none;">
+                        <h4 style="margin: 15px 0 10px 0; color: #333;">Parameters:</h4>
+                        <div id="parameters-container"></div>
+                    </div>
+                </div>
+                <div class="contact-form-buttons">
+                    <button class="contact-cancel" onclick="hideTemplateModal()">Cancel</button>
+                    <button class="contact-send" onclick="sendTemplateMessage()">Send Template</button>
                 </div>
             </div>
         </div>
@@ -886,6 +908,16 @@
                 } else {
                     // Regular text message
                     messageContent = message.body || message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || 'Media message';
+                    
+                    // Add template information if available
+                    if (message.template && message.direction === 'outgoing') {
+                        messageContent = `
+                            <div style="background: rgba(37, 211, 102, 0.1); border-left: 3px solid #25D366; padding: 8px; border-radius: 5px; margin-bottom: 8px;">
+                                <div style="font-size: 12px; color: #128C7E; font-weight: bold; margin-bottom: 5px;">📋 Template: ${message.template.name}</div>
+                            </div>
+                            ${messageContent}
+                        `;
+                    }
                 }
                 
                 content = `
@@ -1144,9 +1176,13 @@
 
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('contact-modal');
-            if (event.target === modal) {
+            const contactModal = document.getElementById('contact-modal');
+            const templateModal = document.getElementById('template-modal');
+            if (event.target === contactModal) {
                 hideContactModal();
+            }
+            if (event.target === templateModal) {
+                hideTemplateModal();
             }
         };
 
@@ -1155,7 +1191,193 @@
             if (event.key === 'Enter' && document.getElementById('contact-modal').classList.contains('show')) {
                 sendContact();
             }
+            if (event.key === 'Enter' && document.getElementById('template-modal').classList.contains('show')) {
+                sendTemplateMessage();
+            }
         });
+
+        let availableTemplates = [];
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/templates');
+                if (response.ok) {
+                    availableTemplates = await response.json();
+                    populateTemplateSelect();
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+
+        function populateTemplateSelect() {
+            const select = document.getElementById('template-select');
+            select.innerHTML = '<option value="">Select a template...</option>';
+            
+            availableTemplates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.name;
+                option.textContent = `${template.name} (${template.language})`;
+                select.appendChild(option);
+            });
+        }
+
+        function showTemplateModal() {
+            document.getElementById('template-modal').classList.add('show');
+            loadTemplates();
+        }
+
+        function hideTemplateModal() {
+            document.getElementById('template-modal').classList.remove('show');
+            clearTemplateForm();
+        }
+
+        function clearTemplateForm() {
+            document.getElementById('template-select').value = '';
+            document.getElementById('template-preview').style.display = 'none';
+            document.getElementById('template-parameters').style.display = 'none';
+            document.getElementById('parameters-container').innerHTML = '';
+        }
+
+        // Handle template selection change
+        document.addEventListener('change', function(event) {
+            if (event.target.id === 'template-select') {
+                const templateName = event.target.value;
+                if (templateName) {
+                    showTemplatePreview(templateName);
+                } else {
+                    clearTemplatePreview();
+                }
+            }
+        });
+
+        async function showTemplatePreview(templateName) {
+            try {
+                const templatePath = `/template-repository/${templateName}.json`;
+                const response = await fetch(templatePath);
+                
+                if (response.ok) {
+                    const templateData = await response.json();
+                    displayTemplatePreview(templateData);
+                } else {
+                    console.error('Failed to load template details');
+                }
+            } catch (error) {
+                console.error('Error loading template details:', error);
+            }
+        }
+
+        function displayTemplatePreview(templateData) {
+            const preview = document.getElementById('template-preview');
+            const parametersDiv = document.getElementById('template-parameters');
+            const parametersContainer = document.getElementById('parameters-container');
+            
+            // Find body component
+            const bodyComponent = templateData.components.find(comp => comp.type === 'BODY');
+            
+            if (bodyComponent) {
+                preview.textContent = bodyComponent.text;
+                preview.style.display = 'block';
+                
+                // Check for parameters
+                const parameters = bodyComponent.example?.body_text_named_params || [];
+                
+                if (parameters.length > 0) {
+                    parametersContainer.innerHTML = '';
+                    
+                    parameters.forEach(param => {
+                        const paramDiv = document.createElement('div');
+                        paramDiv.style.marginBottom = '10px';
+                        
+                        const label = document.createElement('label');
+                        label.textContent = param.param_name;
+                        label.style.display = 'block';
+                        label.style.marginBottom = '5px';
+                        label.style.fontWeight = 'bold';
+                        label.style.color = '#333';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.placeholder = param.example || `Enter ${param.param_name}`;
+                        input.id = `param-${param.param_name}`;
+                        input.style.width = '100%';
+                        input.style.padding = '8px';
+                        input.style.border = '1px solid #ddd';
+                        input.style.borderRadius = '5px';
+                        input.style.fontSize = '14px';
+                        
+                        paramDiv.appendChild(label);
+                        paramDiv.appendChild(input);
+                        parametersContainer.appendChild(paramDiv);
+                    });
+                    
+                    parametersDiv.style.display = 'block';
+                } else {
+                    parametersDiv.style.display = 'none';
+                }
+            }
+        }
+
+        function clearTemplatePreview() {
+            document.getElementById('template-preview').style.display = 'none';
+            document.getElementById('template-parameters').style.display = 'none';
+        }
+
+        async function sendTemplateMessage() {
+            const templateName = document.getElementById('template-select').value;
+            const phone = document.getElementById('phone-input').value.trim();
+            
+            if (!templateName) {
+                alert('Please select a template');
+                return;
+            }
+            
+            if (!phone) {
+                alert('Please enter a phone number');
+                return;
+            }
+            
+            // Collect parameters
+            const parameters = [];
+            const paramInputs = document.querySelectorAll('#parameters-container input');
+            
+            paramInputs.forEach(input => {
+                const paramName = input.id.replace('param-', '');
+                const paramValue = input.value.trim();
+                
+                if (paramValue) {
+                    parameters.push({
+                        name: paramName,
+                        value: paramValue
+                    });
+                }
+            });
+            
+            try {
+                const response = await fetch('/api/send-template-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        to: phone,
+                        templateName: templateName,
+                        parameters: parameters
+                    })
+                });
+                
+                if (response.ok) {
+                    hideTemplateModal();
+                    console.log('Template message sent successfully');
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to send template: ${error.error}`);
+                }
+            } catch (error) {
+                console.error('Error sending template message:', error);
+                alert('Error sending template message. Please try again.');
+            }
+        }
 
         async function sendButtonResponse(buttonId, title) {
             const phone = document.getElementById('phone-input').value.trim();

@@ -1,0 +1,24 @@
+{
+    "name": "onboarding_novos_moradores",
+    "previous_category": "MARKETING",
+    "parameter_format": "NAMED",
+    "components": [
+        {
+            "type": "BODY",
+            "text": "*Cadastro realizado com sucesso, {{nome_morador}}!*\n\nSeja muito bem-vindo(a) à Zind, a nova casa digital do nosso condomínio!\n\nEste chat no WhatsApp agora é seu canal direto para resolver as coisas rápidas do dia a dia!\n\n🤖 *Para abrir um chamado ou registrar uma ocorrência* (ex: \"lâmpada queimada\"), basta me enviar um 'Olá' por aqui. \n\nEu registrarei tudo na plataforma para a gestão resolver. Simples e rápido!",
+            "example": {
+                "body_text_named_params": [
+                    {
+                        "param_name": "nome_morador",
+                        "example": "nome qualquer"
+                    }
+                ]
+            }
+        }
+    ],
+    "language": "pt_BR",
+    "status": "APPROVED",
+    "category": "UTILITY",
+    "correct_category": "UTILITY",
+    "id": "1525665808888414"
+}

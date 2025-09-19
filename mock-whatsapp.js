@@ -55,16 +55,89 @@ const upload = multer({
 // Serve uploaded files
 app.use('/uploads', express.static(uploadsDir));
 
+// Serve template files (for web interface preview)
+app.use('/template-repository', express.static(path.join(__dirname, 'template-repository')));
+
 // In-memory storage for messages
 let messages = [];
 let messageId = 1;
 
+// Function to load and process template
+function loadAndProcessTemplate(templateName, parameters) {
+    try {
+        const templatePath = path.join(__dirname, 'template-repository', `${templateName}.json`);
+        
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`Template not found: ${templateName}`);
+        }
+        
+        const templateData = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+        
+        // Find the BODY component
+        const bodyComponent = templateData.components.find(comp => comp.type === 'BODY');
+        
+        if (!bodyComponent) {
+            throw new Error(`Template ${templateName} has no BODY component`);
+        }
+        
+        let processedText = bodyComponent.text;
+        
+        // Replace parameters
+        if (parameters && parameters.length > 0) {
+            parameters.forEach(param => {
+                if (param.type === 'text' && param.parameter_name) {
+                    // Replace {{parameter_name}} with the actual value
+                    const placeholder = `{{${param.parameter_name}}}`;
+                    processedText = processedText.replace(new RegExp(placeholder, 'g'), param.text);
+                }
+            });
+        }
+        
+        return {
+            success: true,
+            text: processedText,
+            templateData: templateData
+        };
+    } catch (error) {
+        console.error('Template processing error:', error.message);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
 // Mock WhatsApp API endpoint
 app.post('/:version/:phoneNumberId/messages', (req, res) => {
     const { phoneNumberId } = req.params;
-    const { messaging_product, to, text, type, interactive, status } = req.body;
+    const { messaging_product, to, text, type, interactive, status, template } = req.body;
 
     console.log('<--- Mock called:', JSON.stringify(req.body, null, 2));
+
+    let messageBody = text?.body || interactive?.body?.text || `n/a (${type}/${status})`;
+    let processedTemplate = null;
+
+    // Handle template messages
+    if (type === 'template' && template) {
+        const templateResult = loadAndProcessTemplate(
+            template.name,
+            template.components?.[0]?.parameters
+        );
+        
+        if (templateResult.success) {
+            messageBody = templateResult.text;
+            processedTemplate = {
+                name: template.name,
+                originalTemplate: template,
+                processedText: templateResult.text,
+                templateData: templateResult.templateData
+            };
+            console.log('---> Template processed successfully:', template.name);
+        } else {
+            messageBody = `Template Error: ${templateResult.error}`;
+            console.error('---> Template processing failed:', templateResult.error);
+        }
+    }
 
     // Create message object
     const message = {
@@ -74,8 +147,9 @@ app.post('/:version/:phoneNumberId/messages', (req, res) => {
         timestamp: Date.now(),
         type: type || 'text',
         messaging_product,
-        body: text?.body || interactive?.body?.text || `n/a (${type}/${status})`,
+        body: messageBody,
         interactive: interactive || null,
+        template: processedTemplate,
         direction: 'outgoing'
     };
     
@@ -362,6 +436,96 @@ app.post('/api/send-user-message', (req, res) => {
         });
     
     res.json({ success: true, message: incomingMessage });
+});
+
+// API to get available templates
+app.get('/api/templates', (req, res) => {
+    try {
+        const templateDir = path.join(__dirname, 'template-repository');
+        
+        if (!fs.existsSync(templateDir)) {
+            return res.json([]);
+        }
+        
+        const templateFiles = fs.readdirSync(templateDir).filter(file => file.endsWith('.json'));
+        const templates = [];
+        
+        templateFiles.forEach(file => {
+            try {
+                const templatePath = path.join(templateDir, file);
+                const templateData = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+                
+                templates.push({
+                    filename: file,
+                    name: templateData.name,
+                    language: templateData.language,
+                    category: templateData.category,
+                    status: templateData.status,
+                    components: templateData.components.map(comp => ({
+                        type: comp.type,
+                        parameters: comp.example?.body_text_named_params || []
+                    }))
+                });
+            } catch (error) {
+                console.error(`Error reading template ${file}:`, error.message);
+            }
+        });
+        
+        res.json(templates);
+    } catch (error) {
+        console.error('Error listing templates:', error.message);
+        res.status(500).json({ error: 'Failed to list templates' });
+    }
+});
+
+// API to send template message (for testing from web interface)
+app.post('/api/send-template-message', (req, res) => {
+    const { to, templateName, parameters } = req.body;
+    
+    if (!templateName) {
+        return res.status(400).json({ error: 'Template name is required' });
+    }
+    
+    // Create template message payload
+    const templatePayload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: to,
+        type: "template",
+        template: {
+            name: templateName,
+            language: {
+                code: "pt_BR"
+            }
+        }
+    };
+    
+    // Add parameters if provided
+    if (parameters && parameters.length > 0) {
+        templatePayload.template.components = [
+            {
+                type: "body",
+                parameters: parameters.map(param => ({
+                    type: "text",
+                    parameter_name: param.name,
+                    text: param.value
+                }))
+            }
+        ];
+    }
+    
+    // Send to the messages endpoint (simulate bot sending template)
+    const axios = require('axios');
+    const mockApiUrl = `http://localhost:${PORT}/v18.0/mock_phone_id/messages`;
+    
+    axios.post(mockApiUrl, templatePayload)
+        .then(response => {
+            res.json({ success: true, response: response.data });
+        })
+        .catch(error => {
+            console.error('Error sending template message:', error.message);
+            res.status(500).json({ error: 'Failed to send template message' });
+        });
 });
 
 // Get all messages

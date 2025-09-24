@@ -1,0 +1,37 @@
+{
+  "name": "confirmacao_ocorrencia",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "📝 *Confirmar Ocorrência*\n\n*Tipo:* {{tipo_ocorrencia}}\n*Descrição:* {{descricao_ocorrencia}}\n\nOs dados estão corretos?",
+      "example": {
+        "body_text_named_params": [
+            {
+              "param_name": "tipo_ocorrencia",
+              "example": "Manutenção Elevador"
+            },
+            {
+              "param_name": "descricao_ocorrencia",
+              "example": "O elevador social do Bloco A não está funcionando"
+            }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "✅ Confirmar"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "✏️ Corrigir"
+        }
+      ]
+    }
+  ]
+}

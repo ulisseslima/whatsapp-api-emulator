@@ -1,0 +1,12 @@
+{
+  "name": "solicitar_descricao_ocorrencia",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "📝 *Descreva sua ocorrência*\n\nPara iniciar o registro, por favor, descreva em detalhes o que aconteceu.\n\nTente incluir o local exato, se possível.\n\n*Ex: O elevador social do Bloco A não está funcionando.*"
+    }
+  ]
+}

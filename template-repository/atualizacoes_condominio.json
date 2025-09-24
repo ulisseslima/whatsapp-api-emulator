@@ -1,0 +1,36 @@
+{
+  "name": "atualizacoes_condominio",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "🏠 *{{condominio_nome}}*\n📍 Bloco {{bloco}}, Unidade {{unidade}}\n\nOlá, {{nome_morador}}! 👋\n\n{{atualizacoes_texto}}",
+      "example": {
+        "body_text_named_params": [
+            {
+              "param_name": "condominio_nome",
+              "example": "Residencial Vista Bela"
+            },
+            {
+              "param_name": "bloco",
+              "example": "A"
+            },
+            {
+              "param_name": "unidade",
+              "example": "101"
+            },
+            {
+              "param_name": "nome_morador",
+              "example": "João Silva"
+            },
+            {
+              "param_name": "atualizacoes_texto",
+              "example": "📢 *Últimas atualizações:*\n\n• Limpeza da piscina programada para amanhã\nA piscina estará indisponível das 8h às 12h para manutenção.\n\n• Assembleia geral marcada\nReunião no próximo sábado às 10h no salão de festas."
+            }
+        ]
+      }
+    }
+  ]
+}

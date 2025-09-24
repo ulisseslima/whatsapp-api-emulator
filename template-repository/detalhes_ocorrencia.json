@@ -1,0 +1,49 @@
+{
+  "name": "detalhes_ocorrencia",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "📋 *Detalhes da Ocorrência*\n\n*Protocolo*: {{protocolo}}\n*Data*: {{data_abertura}}\n*Nome*: {{nome_morador}}\n*Subtipo*: {{subtipo_ocorrencia}}\n*Status*: {{status_ocorrencia}}\n*Descrição*: {{descricao_ocorrencia}}",
+      "example": {
+        "body_text_named_params": [
+            {
+              "param_name": "protocolo",
+              "example": "12345"
+            },
+            {
+              "param_name": "data_abertura",
+              "example": "15/01/2025"
+            },
+            {
+              "param_name": "nome_morador",
+              "example": "João Silva"
+            },
+            {
+              "param_name": "subtipo_ocorrencia",
+              "example": "Manutenção Elevador"
+            },
+            {
+              "param_name": "status_ocorrencia",
+              "example": "Aberta"
+            },
+            {
+              "param_name": "descricao_ocorrencia",
+              "example": "O elevador social do Bloco A não está funcionando"
+            }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "🏠 Voltar ao Menu"
+        }
+      ]
+    }
+  ]
+}

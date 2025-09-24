@@ -1,0 +1,20 @@
+{
+  "name": "ocorrencia_criada",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Sua ocorrência foi registrada com sucesso. A equipe de gestão já foi acionada.\n\n✅ #{{protocolo_ocorrencia}}\n\n**Você será notificado por aqui sobre cada andamento.**\n\n✨ DICA: Quer uma experiência completa? Baixe o app da **Zind**!\nPelo aplicativo, além das ocorrências, você pode reservar áreas comuns, ver os avisos do síndico e muito mais.\n📲 Baixe agora:\n• Android: [Link para a Google Play Store]\n• iPhone: [Link para a Apple App Store]",
+      "example": {
+        "body_text_named_params": [
+            {
+              "param_name": "protocolo_ocorrencia",
+              "example": "12345"
+            }
+        ]
+      }
+    }
+  ]
+}

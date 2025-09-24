@@ -1,0 +1,12 @@
+{
+  "name": "verificacao_sessao",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Estou verificando sua sessão e já retorno..."
+    }
+  ]
+}

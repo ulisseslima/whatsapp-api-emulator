@@ -1,0 +1,21 @@
+{
+  "name": "lista_ocorrencias_vazia",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "📋 *Boas notícias!*\n\nVerifiquei aqui e você não possui nenhuma ocorrência em aberto no momento. 😊"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "🏠 Voltar ao Menu"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "ocorrencia_nao_encontrada",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "❌ *Ocorrência não encontrada*\n\nNão consegui encontrar os detalhes dessa ocorrência. Pode tentar outra?"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "🏠 Voltar ao Menu"
+        }
+      ]
+    }
+  ]
+}

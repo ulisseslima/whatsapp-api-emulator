@@ -63,7 +63,7 @@ let messages = [];
 let messageId = 1;
 
 // Function to load and process template
-function loadAndProcessTemplate(templateName, parameters) {
+function loadAndProcessTemplate(templateName, components) {
     try {
         const templatePath = path.join(__dirname, 'template-repository', `${templateName}.json`);
         
@@ -82,21 +82,78 @@ function loadAndProcessTemplate(templateName, parameters) {
         
         let processedText = bodyComponent.text;
         
-        // Replace parameters
-        if (parameters && parameters.length > 0) {
-            parameters.forEach(param => {
-                if (param.type === 'text' && param.parameter_name) {
-                    // Replace {{parameter_name}} with the actual value
-                    const placeholder = `{{${param.parameter_name}}}`;
-                    processedText = processedText.replace(new RegExp(placeholder, 'g'), param.text);
+        // Process parameters from different component types
+        if (components && components.length > 0) {
+            components.forEach(component => {
+                // Handle body parameters (old format)
+                if (component.type === 'body' && component.parameters) {
+                    component.parameters.forEach(param => {
+                        if (param.type === 'text' && param.parameter_name) {
+                            const placeholder = `{{${param.parameter_name}}}`;
+                            processedText = processedText.replace(new RegExp(placeholder, 'g'), param.text);
+                        }
+                    });
+                }
+                
+                // Handle Facebook-style body parameters
+                if (component.type === 'body' && component.parameters) {
+                    component.parameters.forEach(param => {
+                        if (param.type === 'text' && param.text) {
+                            // For Facebook format, we need to map positional parameters
+                            // This is a simplified approach - in real implementation you'd need proper parameter mapping
+                            const placeholderMatch = processedText.match(/\{\{[^}]+\}\}/);
+                            if (placeholderMatch) {
+                                processedText = processedText.replace(placeholderMatch[0], param.text);
+                            }
+                        }
+                    });
                 }
             });
+        }
+        
+        // Find BUTTONS component from template data
+        const buttonsComponent = templateData.components.find(comp => comp.type === 'BUTTONS');
+        let interactive = null;
+        let buttonPayloads = {};
+        
+        // Process button parameters from incoming message
+        if (components && components.length > 0) {
+            components.forEach(component => {
+                if (component.type === 'button' && component.sub_type === 'quick_reply') {
+                    const buttonIndex = component.index || 0;
+                    if (component.parameters && component.parameters[0] && component.parameters[0].payload) {
+                        buttonPayloads[buttonIndex] = component.parameters[0].payload;
+                    }
+                }
+            });
+        }
+        
+        // If template has buttons, create interactive message
+        if (buttonsComponent && buttonsComponent.buttons) {
+            interactive = {
+                type: "button",
+                body: {
+                    text: processedText
+                },
+                action: {
+                    buttons: buttonsComponent.buttons.map((button, index) => ({
+                        type: "reply",
+                        reply: {
+                            id: buttonPayloads[index] || `btn_${index}`,
+                            title: button.text.substring(0, 20) // WhatsApp button title limit
+                        }
+                    }))
+                }
+            };
         }
         
         return {
             success: true,
             text: processedText,
-            templateData: templateData
+            interactive: interactive,
+            templateData: templateData,
+            hasButtons: !!buttonsComponent,
+            buttonPayloads: buttonPayloads
         };
     } catch (error) {
         console.error('Template processing error:', error.message);
@@ -110,7 +167,8 @@ function loadAndProcessTemplate(templateName, parameters) {
 // Mock WhatsApp API endpoint
 app.post('/:version/:phoneNumberId/messages', (req, res) => {
     const { phoneNumberId } = req.params;
-    const { messaging_product, to, text, type, interactive, status, template } = req.body;
+    const { messaging_product, to, text, status, template } = req.body;
+    let { type, interactive } = req.body;
 
     console.log('<--- Mock called:', JSON.stringify(req.body, null, 2));
 
@@ -119,9 +177,10 @@ app.post('/:version/:phoneNumberId/messages', (req, res) => {
 
     // Handle template messages
     if (type === 'template' && template) {
+        // Extract all components, not just the first one
         const templateResult = loadAndProcessTemplate(
             template.name,
-            template.components?.[0]?.parameters
+            template.components
         );
         
         if (templateResult.success) {
@@ -130,9 +189,18 @@ app.post('/:version/:phoneNumberId/messages', (req, res) => {
                 name: template.name,
                 originalTemplate: template,
                 processedText: templateResult.text,
-                templateData: templateResult.templateData
+                templateData: templateResult.templateData,
+                hasButtons: templateResult.hasButtons,
+                interactive: templateResult.interactive,
+                buttonPayloads: templateResult.buttonPayloads
             };
             console.log('---> Template processed successfully:', template.name);
+            
+            // If template has buttons, override the message type and add interactive content
+            if (templateResult.hasButtons && templateResult.interactive) {
+                type = 'interactive';
+                interactive = templateResult.interactive;
+            }
         } else {
             messageBody = `Template Error: ${templateResult.error}`;
             console.error('---> Template processing failed:', templateResult.error);
@@ -461,10 +529,23 @@ app.get('/api/templates', (req, res) => {
                     language: templateData.language,
                     category: templateData.category,
                     status: templateData.status,
-                    components: templateData.components.map(comp => ({
-                        type: comp.type,
-                        parameters: comp.example?.body_text_named_params || []
-                    }))
+                    hasButtons: templateData.components.some(comp => comp.type === 'BUTTONS'),
+                    components: templateData.components.map(comp => {
+                        if (comp.type === 'BODY') {
+                            return {
+                                type: comp.type,
+                                parameters: comp.example?.body_text_named_params || []
+                            };
+                        } else if (comp.type === 'BUTTONS') {
+                            return {
+                                type: comp.type,
+                                buttons: comp.buttons || []
+                            };
+                        }
+                        return {
+                            type: comp.type
+                        };
+                    })
                 });
             } catch (error) {
                 console.error(`Error reading template ${file}:`, error.message);

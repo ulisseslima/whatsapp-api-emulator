@@ -1,0 +1,12 @@
+{
+  "name": "selecao_unidade",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "🏢 Você possui acesso a múltiplas unidades.\n\nSelecione a unidade desejada:"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "menu_principal",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "🏠 *{{condominio_nome}}*\n\nComo posso ajudar hoje?",
+      "example": {
+        "body_text_named_params": [
+            {
+              "param_name": "condominio_nome",
+              "example": "Residencial Vista Bela"
+            }
+        ]
+      }
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "Minhas Ocorrências"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Nova Ocorrência"
+        },
+        {
+          "type": "QUICK_REPLY",
+          "text": "Trocar Unidade"
+        }
+      ]
+    }
+  ]
+}

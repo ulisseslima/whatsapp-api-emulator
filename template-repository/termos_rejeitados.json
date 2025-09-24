@@ -1,0 +1,12 @@
+{
+  "name": "termos_rejeitados",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "❌ *Termos não aceitos*\n\nEntendido.\nPara garantir a segurança de todos e a conformidade com a Lei Geral de Proteção de Dados (LGPD), o aceite dos termos é um passo necessário para podermos processar suas solicitações por este canal.\nComo os termos não foram aceitos, não posso dar continuidade ao seu atendimento.\nSe você mudar de ideia no futuro, basta me enviar um \"Olá\" novamente para recomeçar o processo. Tenha um ótimo dia!"
+    }
+  ]
+}

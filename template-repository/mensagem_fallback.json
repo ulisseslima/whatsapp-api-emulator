@@ -1,0 +1,21 @@
+{
+  "name": "mensagem_fallback",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Por favor selecione uma opção acima. Se preferir, volte ao menu inicial."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "🏠 Voltar ao Menu"
+        }
+      ]
+    }
+  ]
+}

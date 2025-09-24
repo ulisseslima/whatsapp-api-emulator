@@ -1,0 +1,25 @@
+{
+  "name": "termos_e_privacidade",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "🏢 Olá! Bem-vindo ao Zind!\n\n📋 *Termos de Uso e Política de Privacidade*\n\nPara utilizar nossos serviços, você precisa aceitar nossos termos de uso e política de privacidade.\n\n• Seus dados serão utilizados apenas para comunicação oficial do condomínio\n• Não compartilhamos suas informações com terceiros\n• Você pode solicitar a exclusão dos seus dados a qualquer momento\n\nVocê aceita os termos?"
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "✅ Aceitar"
+        },
+        {
+          "type": "QUICK_REPLY", 
+          "text": "❌ Rejeitar"
+        }
+      ]
+    }
+  ]
+}

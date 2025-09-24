@@ -1,0 +1,21 @@
+{
+  "name": "mensagem_erro",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "⚠️ *Erro no sistema*\n\nOcorreu um erro temporário. Tente novamente.\n\nSe o problema persistir, entre em contato com o suporte."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        {
+          "type": "QUICK_REPLY",
+          "text": "🏠 Voltar ao Menu"
+        }
+      ]
+    }
+  ]
+}

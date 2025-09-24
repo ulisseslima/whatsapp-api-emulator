@@ -911,12 +911,19 @@
                     
                     // Add template information if available
                     if (message.template && message.direction === 'outgoing') {
-                        messageContent = `
+                        let payloadInfo = '';
+                        if (message.template.buttonPayloads && Object.keys(message.template.buttonPayloads).length > 0) {
+                            payloadInfo = '<div style="font-size: 11px; color: #128C7E;">🎯 Custom button payloads configured</div>';
+                        }
+                        
+                        let templateInfo = `
                             <div style="background: rgba(37, 211, 102, 0.1); border-left: 3px solid #25D366; padding: 8px; border-radius: 5px; margin-bottom: 8px;">
                                 <div style="font-size: 12px; color: #128C7E; font-weight: bold; margin-bottom: 5px;">📋 Template: ${message.template.name}</div>
+                                ${message.template.hasButtons ? '<div style="font-size: 11px; color: #128C7E;">✨ Interactive template with buttons</div>' : ''}
+                                ${payloadInfo}
                             </div>
-                            ${messageContent}
                         `;
+                        messageContent = templateInfo + messageContent;
                     }
                 }
                 
@@ -1217,7 +1224,8 @@
             availableTemplates.forEach(template => {
                 const option = document.createElement('option');
                 option.value = template.name;
-                option.textContent = `${template.name} (${template.language})`;
+                const buttonIndicator = template.hasButtons ? ' 🔘' : '';
+                option.textContent = `${template.name} (${template.language})${buttonIndicator}`;
                 select.appendChild(option);
             });
         }
@@ -1274,9 +1282,21 @@
             
             // Find body component
             const bodyComponent = templateData.components.find(comp => comp.type === 'BODY');
+            // Find buttons component
+            const buttonsComponent = templateData.components.find(comp => comp.type === 'BUTTONS');
             
             if (bodyComponent) {
-                preview.textContent = bodyComponent.text;
+                let previewText = bodyComponent.text;
+                
+                // Add buttons preview if available
+                if (buttonsComponent && buttonsComponent.buttons) {
+                    previewText += '\n\n---\n🔘 Interactive Buttons:\n';
+                    buttonsComponent.buttons.forEach((button, index) => {
+                        previewText += `  ${index + 1}. ${button.text}\n`;
+                    });
+                }
+                
+                preview.textContent = previewText;
                 preview.style.display = 'block';
                 
                 // Check for parameters

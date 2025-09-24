@@ -1,0 +1,12 @@
+{
+  "name": "acesso_nao_encontrado",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "❌ *Acesso não encontrado*\n\nNão encontramos seu número em nosso sistema.\n\nPara ter acesso:\n• Verifique se seu número está cadastrado na administração\n• Entre em contato com a administração do seu condomínio\n\nTente novamente mais tarde."
+    }
+  ]
+}

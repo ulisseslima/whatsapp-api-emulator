@@ -1,0 +1,12 @@
+{
+  "name": "sessao_encerrada_inatividade",
+  "category": "UTILITY",
+  "language": "pt_BR",
+  "parameter_format": "NAMED",
+  "components": [
+    {
+      "type": "BODY",
+      "text": "⏰ Estou encerrando nossa interação por inatividade.\n\nSe precisar de ajuda, é só mandar um oi! 👋"
+    }
+  ]
+}

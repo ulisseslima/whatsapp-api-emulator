@@ -58,8 +58,28 @@ app.use('/uploads', express.static(uploadsDir));
 // Serve template files (for web interface preview)
 app.use('/template-repository', express.static(path.join(__dirname, 'template-repository')));
 
-// In-memory storage for messages
-let messages = [];
+// Store media ID to file mapping
+const mediaIdToFile = new Map();
+
+// In-memory storage for messages per phone number
+let phoneMessages = new Map(); // Map<phoneNumber, messages[]>
+
+// Helper function to get or initialize messages for a phone number
+function getMessagesForPhone(phoneNumber) {
+    if (!phoneMessages.has(phoneNumber)) {
+        phoneMessages.set(phoneNumber, []);
+    }
+    return phoneMessages.get(phoneNumber);
+}
+
+// Helper function to get all messages (for backward compatibility)
+function getAllMessages() {
+    const allMessages = [];
+    for (const messages of phoneMessages.values()) {
+        allMessages.push(...messages);
+    }
+    return allMessages;
+}
 let messageId = 1;
 
 // Function to load and process template
@@ -164,6 +184,61 @@ function loadAndProcessTemplate(templateName, components) {
     }
 }
 
+// Mock WhatsApp Graph API media download endpoint
+app.get('/:version/:mediaId', (req, res) => {
+    const { mediaId } = req.params;
+    
+    console.log(`<--- Media download requested for ID: ${mediaId}`);
+    
+    if (!mediaIdToFile.has(mediaId)) {
+        console.log(`---> Media ID ${mediaId} not found`);
+        return res.status(404).json({ 
+            error: {
+                message: "Media not found",
+                type: "OAuthException",
+                code: 100
+            }
+        });
+    }
+    
+    const mediaData = mediaIdToFile.get(mediaId);
+    
+    // Return media metadata (similar to WhatsApp Graph API response)
+    res.json({
+        url: mediaData.url,
+        mime_type: mediaData.mimetype,
+        sha256: "mock_sha256_hash", // In real implementation, this would be the actual hash
+        file_size: mediaData.size,
+        id: mediaId,
+        messaging_product: "whatsapp"
+    });
+});
+
+// Alternative endpoint that directly serves the file (some implementations might expect this)
+app.get('/:version/:mediaId/download', (req, res) => {
+    const { mediaId } = req.params;
+    
+    console.log(`<--- Direct media download requested for ID: ${mediaId}`);
+    
+    if (!mediaIdToFile.has(mediaId)) {
+        console.log(`---> Media ID ${mediaId} not found`);
+        return res.status(404).json({ 
+            error: {
+                message: "Media not found",
+                type: "OAuthException",
+                code: 100
+            }
+        });
+    }
+    
+    const mediaData = mediaIdToFile.get(mediaId);
+    
+    // Serve the actual file
+    res.setHeader('Content-Type', mediaData.mimetype);
+    res.setHeader('Content-Disposition', `attachment; filename="${mediaData.originalname}"`);
+    res.sendFile(path.resolve(mediaData.path));
+});
+
 // Mock WhatsApp API endpoint
 app.post('/:version/:phoneNumberId/messages', (req, res) => {
     const { phoneNumberId } = req.params;
@@ -221,7 +296,9 @@ app.post('/:version/:phoneNumberId/messages', (req, res) => {
         direction: 'outgoing'
     };
     
-    messages.push(message);
+    // Store message in phone-specific storage
+    const phoneMessagesArray = getMessagesForPhone(to);
+    phoneMessagesArray.push(message);
     
     // Broadcast to connected clients via SSE
     broadcastMessage(message);
@@ -252,8 +329,9 @@ app.get('/events', (req, res) => {
         'Access-Control-Allow-Origin': '*'
     });
 
-    // Send current messages
-    res.write(`data: ${JSON.stringify({ type: 'initial', messages })}\n\n`);
+    // Send current messages (all messages for backward compatibility)
+    const allMessages = getAllMessages();
+    res.write(`data: ${JSON.stringify({ type: 'initial', messages: allMessages })}\n\n`);
 
     // Keep connection alive
     const keepAlive = setInterval(() => {
@@ -298,7 +376,19 @@ app.post('/api/send-file-message', upload.single('file'), (req, res) => {
         return res.status(400).json({ error: 'No file uploaded' });
     }
     
+    // Generate unique media ID
+    const mediaId = `media_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     const mediaUrl = `http://localhost:${PORT}/uploads/${file.filename}`;
+    
+    // Store media ID to file mapping
+    mediaIdToFile.set(mediaId, {
+        filename: file.filename,
+        originalname: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        url: mediaUrl,
+        path: file.path
+    });
     
     // Create incoming message with file
     const incomingMessage = {
@@ -315,7 +405,9 @@ app.post('/api/send-file-message', upload.single('file'), (req, res) => {
         direction: 'incoming'
     };
     
-    messages.push(incomingMessage);
+    // Store message in phone-specific storage
+    const phoneMessagesArray = getMessagesForPhone(from);
+    phoneMessagesArray.push(incomingMessage);
     broadcastMessage(incomingMessage);
     
     // Send webhook to your bot
@@ -329,23 +421,23 @@ app.post('/api/send-file-message', upload.single('file'), (req, res) => {
                         type: messageType || 'document',
                         id: incomingMessage.id,
                         image: messageType === 'image' ? { 
-                            id: 'mock_media_id',
+                            id: mediaId,
                             caption: caption,
                             url: mediaUrl
                         } : undefined,
                         video: messageType === 'video' ? {
-                            id: 'mock_media_id',
+                            id: mediaId,
                             caption: caption,
                             url: mediaUrl
                         } : undefined,
                         document: (messageType === 'document') ? {
-                            id: 'mock_media_id',
+                            id: mediaId,
                             caption: caption,
                             filename: file.originalname,
                             url: mediaUrl
                         } : undefined,
                         audio: messageType === 'audio' ? {
-                            id: 'mock_media_id',
+                            id: mediaId,
                             url: mediaUrl
                         } : undefined
                     }]
@@ -366,7 +458,7 @@ app.post('/api/send-file-message', upload.single('file'), (req, res) => {
             console.error('Error sending file webhook to bot:', error.message);
         });
     
-    res.json({ success: true, message: incomingMessage, mediaUrl: mediaUrl });
+    res.json({ success: true, message: incomingMessage, mediaUrl: mediaUrl, mediaId: mediaId });
 });
 
 // API to send contact messages
@@ -389,7 +481,9 @@ app.post('/api/send-contact-message', (req, res) => {
         direction: 'incoming'
     };
     
-    messages.push(incomingMessage);
+    // Store message in phone-specific storage
+    const phoneMessagesArray = getMessagesForPhone(from);
+    phoneMessagesArray.push(incomingMessage);
     broadcastMessage(incomingMessage);
     
     // Send webhook to your bot
@@ -469,7 +563,9 @@ app.post('/api/send-user-message', (req, res) => {
         direction: 'incoming'
     };
     
-    messages.push(incomingMessage);
+    // Store message in phone-specific storage
+    const phoneMessagesArray = getMessagesForPhone(from);
+    phoneMessagesArray.push(incomingMessage);
     broadcastMessage(incomingMessage);
     
     // Send webhook to your bot
@@ -611,12 +707,13 @@ app.post('/api/send-template-message', (req, res) => {
 
 // Get all messages
 app.get('/api/messages', (req, res) => {
-    res.json(messages);
+    const allMessages = getAllMessages();
+    res.json(allMessages);
 });
 
 // Clear messages
 app.delete('/api/messages', (req, res) => {
-    messages = [];
+    phoneMessages.clear();
     messageId = 1;
     broadcastMessage({ type: 'clear' });
     res.json({ success: true });

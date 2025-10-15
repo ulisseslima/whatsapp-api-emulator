@@ -249,6 +249,65 @@ function generateProtocol() {
     return `${year}${month}${day}-${hour}${minute}${second}-${id}`;
 }
 
+// Helper function to download media from WhatsApp Graph API
+async function downloadMedia(mediaId) {
+    const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `https://graph.facebook.com/${process.env.WABA_API_VERSION}`
+        : process.env.MOCK_WHATSAPP_URL || `http://localhost:3001/${process.env.WABA_API_VERSION}`;
+    
+    try {
+        console.log(`Downloading media with ID: ${mediaId}`);
+        
+        // First, get media metadata
+        const mediaResponse = await axios.get(
+            `${baseUrl}/${mediaId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.ACCESS_TOKEN}`
+                }
+            }
+        );
+        
+        const mediaData = mediaResponse.data;
+        console.log(`Media metadata:`, mediaData);
+        
+        // In production, you would then download the actual file using the URL
+        // For mock environment, we can use the direct download endpoint or the URL
+        if (process.env.NODE_ENV !== 'production') {
+            // In mock mode, return the media data directly
+            return {
+                success: true,
+                url: mediaData.url,
+                mimeType: mediaData.mime_type,
+                fileSize: mediaData.file_size,
+                downloadUrl: `${baseUrl}/${mediaId}/download`
+            };
+        } else {
+            // In production, download the actual file using the URL
+            const fileResponse = await axios.get(mediaData.url, {
+                headers: {
+                    Authorization: `Bearer ${process.env.ACCESS_TOKEN}`
+                },
+                responseType: 'arraybuffer'
+            });
+            
+            return {
+                success: true,
+                url: mediaData.url,
+                mimeType: mediaData.mime_type,
+                fileSize: mediaData.file_size,
+                data: fileResponse.data
+            };
+        }
+    } catch (error) {
+        console.error(`Error downloading media ${mediaId}:`, error.response?.data || error.message);
+        return {
+            success: false,
+            error: error.response?.data || error.message
+        };
+    }
+}
+
 // Helper function to send WhatsApp message
 async function sendWhatsAppMessage(to, message) {
     // Use mock API in development
@@ -894,25 +953,62 @@ app.post("/webhook", async (req, res) => {
             msgBody = message.image.caption || 'Image';
             messageType = 'image';
             console.log(`Received image from ${from}: ${message.image.id}`);
+            
+            // Download the image
+            const mediaResult = await downloadMedia(message.image.id);
+            if (mediaResult.success) {
+                console.log(`Image downloaded successfully: ${mediaResult.url}`);
+                msgBody = `Image received: ${mediaResult.url}`;
+            } else {
+                console.error(`Failed to download image: ${mediaResult.error}`);
+                msgBody = 'Image (download failed)';
+            }
         } else if (message.video) {
             msgBody = message.video.caption || 'Video';
             messageType = 'video';
             console.log(`Received video from ${from}: ${message.video.id}`);
+            
+            // Download the video
+            const mediaResult = await downloadMedia(message.video.id);
+            if (mediaResult.success) {
+                console.log(`Video downloaded successfully: ${mediaResult.url}`);
+                msgBody = `Video received: ${mediaResult.url}`;
+            } else {
+                console.error(`Failed to download video: ${mediaResult.error}`);
+                msgBody = 'Video (download failed)';
+            }
         } else if (message.document) {
             msgBody = message.document.caption || message.document.filename || 'Document';
             messageType = 'document';
             console.log(`Received document from ${from}: ${message.document.id}`);
+            
+            // Download the document
+            const mediaResult = await downloadMedia(message.document.id);
+            if (mediaResult.success) {
+                console.log(`Document downloaded successfully: ${mediaResult.url}`);
+                msgBody = `Document received: ${message.document.filename || 'document'} - ${mediaResult.url}`;
+            } else {
+                console.error(`Failed to download document: ${mediaResult.error}`);
+                msgBody = 'Document (download failed)';
+            }
         } else if (message.audio) {
             msgBody = 'Audio message';
             messageType = 'audio';
             console.log(`Received audio from ${from}: ${message.audio.id}`);
+            
+            // Download the audio
+            const mediaResult = await downloadMedia(message.audio.id);
+            if (mediaResult.success) {
+                console.log(`Audio downloaded successfully: ${mediaResult.url}`);
+                msgBody = `Audio received: ${mediaResult.url}`;
+            } else {
+                console.error(`Failed to download audio: ${mediaResult.error}`);
+                msgBody = 'Audio (download failed)';
+            }
         } else if (message.contacts) {
             msgBody = `Contact: ${message.contacts[0]?.name?.formatted_name || 'Unknown'}`;
             messageType = 'contacts';
             console.log(`Received contact from ${from}: ${message.contacts[0]?.name?.formatted_name}`);
-        } else if (message.image) {
-            msgBody = message.image.id; // In real implementation, download and process the image
-            messageType = 'image';
         } else if (message.interactive) {
             // Handle button responses
             if (message.interactive.button_reply) {

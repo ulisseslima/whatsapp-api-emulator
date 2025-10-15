@@ -6,7 +6,7 @@
   "components": [
     {
       "type": "BODY",
-      "text": "🏠 *{{condominio_nome}}*\n📍 Bloco {{bloco}}, Unidade {{unidade}}\n\nOlá, {{nome_morador}}! 👋\n\n{{atualizacoes_texto}}",
+      "text": "🏠 *{{condominio_nome}}*\n📍 Bloco {{bloco}}, Unidade {{unidade}}\n\nOlá, {{nome_morador}}! 👋\n{{atualizacoes_texto}}\nBem-vindo ao canal oficial de comunicação do condomínio! Aqui você receberá informações importantes sobre seu condomínio, manutenções, eventos e comunicados da administração.",
       "example": {
         "body_text_named_params": [
             {

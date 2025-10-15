@@ -6,7 +6,7 @@
   "components": [
     {
       "type": "BODY",
-      "text": "📋 *Detalhes da Ocorrência*\n\n*Protocolo*: {{protocolo}}\n*Data*: {{data_abertura}}\n*Nome*: {{nome_morador}}\n*Subtipo*: {{subtipo_ocorrencia}}\n*Status*: {{status_ocorrencia}}\n*Descrição*: {{descricao_ocorrencia}}",
+      "text": "📋 *Detalhes da Ocorrência*\n\n*Protocolo*: {{protocolo}}\n*Data*: {{data_abertura}}\n*Nome*: {{nome_morador}}\n*Subtipo*: {{subtipo_ocorrencia}}\n*Status*: {{status_ocorrencia}}\n*Descrição*: {{descricao_ocorrencia}}\n\nMais detalhes no app.",
       "example": {
         "body_text_named_params": [
             {

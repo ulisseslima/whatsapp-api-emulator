@@ -29,8 +29,25 @@ Send a `PATCH` request to the the `/v1/settings/application` endpoint with t
 
 ### Example Request
 
-PATCH /v1/settings/application {  "callback_persist":  true,  "sent_status":  true,  //  Either use this or webhooks.message.sent, but webhooks.message.sent property is preferred as sent_status will be deprecated soon "webhooks":  {  "url":  "webhook.your-domain",  "message":  {  //  Available on v2.41.2 and above "sent":  false,  "delivered":  true,  "read":  false  },  }  }
+```http
+PATCH /v1/settings/application
+Content-Type: application/json
 
+{
+	"callback_persist": true,
+	"sent_status": true,
+	"webhooks": {
+		"url": "https://webhook.your-domain/whatsapp",
+		"message": {
+			"sent": false,
+			"delivered": true,
+			"read": false
+		}
+	}
+}
+```
+
+Note: the `webhooks.message.*` properties are the preferred way to receive message status updates. The legacy `sent_status` parameter is deprecated in favor of the `webhooks.message` properties; prefer configuring status callbacks under the `webhooks` object.
 On success, the response contains `200 OK` with a `null` or a JSON object.
 
 Visit the [Application Settings Reference](https://developers.facebook.com/docs/whatsapp/on-premises/reference/settings/app#parameters) for more information about configuring your app, and additional webhooks parameters.

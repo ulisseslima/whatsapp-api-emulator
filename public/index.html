@@ -11,22 +11,22 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(180deg, #075E54 0%, #128C7E 100%);
-            height: 100vh;
+            background: #f0f2f5;
             display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         .chat-container {
             width: 100%;
-            max-width: 768px;
-            height: 768px;
+            height: 100vh;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -766,14 +766,10 @@
                 class="file-input"
                 accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
                 onchange="handleFileSelect(event)"
+                multiple
             >
             <div class="file-preview" id="file-preview">
-                <img id="file-thumbnail" src="" alt="File preview" style="display: none;">
-                <div class="file-info">
-                    <div class="file-name" id="file-name"></div>
-                    <div class="file-size" id="file-size"></div>
-                </div>
-                <button class="file-remove" onclick="removeFile()" title="Remove file">×</button>
+                <div id="file-list"></div>
             </div>
             <div class="upload-progress" id="upload-progress">
                 <div class="upload-progress-bar" id="upload-progress-bar"></div>
@@ -861,7 +857,7 @@
     <script>
         let eventSource = null;
         let isConnected = false;
-        let selectedFile = null;
+        let selectedFiles = [];
 
         // Multi-tab state management
         let phoneContexts = {}; // Store messages and state for each phone number
@@ -1278,7 +1274,7 @@
             const input = document.getElementById('message-input');
             const message = input.value.trim();
             
-            if ((!message && !selectedFile) || !activePhone) {
+            if ((!message && selectedFiles.length === 0) || !activePhone) {
                 if (!activePhone) {
                     alert('Please add a phone number tab first');
                 }
@@ -1286,9 +1282,16 @@
             }
             
             try {
-                if (selectedFile) {
-                    // Send file message
-                    await sendFileMessage(activePhone, message, selectedFile);
+                if (selectedFiles.length > 0) {
+                    // Send each file as a separate message
+                    for (const file of selectedFiles) {
+                        await sendFileMessage(activePhone, message, file);
+                        // Small delay between messages to maintain order
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    // Clear input and files after all are sent
+                    input.value = '';
+                    removeAllFiles();
                 } else {
                     // Send text message
                     const response = await fetch('/api/send-user-message', {
@@ -1331,9 +1334,6 @@
                 });
                 
                 if (response.ok) {
-                    document.getElementById('message-input').value = '';
-                    removeFile();
-                    
                     // Simulate upload progress
                     let progress = 0;
                     const progressInterval = setInterval(() => {
@@ -1372,49 +1372,99 @@
         }
 
         function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
             
-            // Check file size (max 16MB)
+            // Check file sizes (max 16MB each)
             const maxSize = 16 * 1024 * 1024;
-            if (file.size > maxSize) {
-                alert('File size must be less than 16MB');
-                return;
-            }
+            const validFiles = files.filter(file => {
+                if (file.size > maxSize) {
+                    alert(`File "${file.name}" is too large. Maximum size is 16MB`);
+                    return false;
+                }
+                return true;
+            });
             
-            selectedFile = file;
-            showFilePreview(file);
+            if (validFiles.length > 0) {
+                selectedFiles = [...selectedFiles, ...validFiles];
+                showFilePreview();
+            }
         }
 
-        function showFilePreview(file) {
+        function showFilePreview() {
             const preview = document.getElementById('file-preview');
-            const thumbnail = document.getElementById('file-thumbnail');
-            const fileName = document.getElementById('file-name');
-            const fileSize = document.getElementById('file-size');
+            const fileList = document.getElementById('file-list');
             
-            fileName.textContent = file.name;
-            fileSize.textContent = formatFileSize(file.size);
+            fileList.innerHTML = '';
             
-            // Show thumbnail for images
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    thumbnail.src = e.target.result;
-                    thumbnail.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                thumbnail.style.display = 'none';
-            }
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 8px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 5px;';
+                
+                // Show thumbnail for images
+                if (file.type.startsWith('image/')) {
+                    const thumbnail = document.createElement('img');
+                    thumbnail.style.cssText = 'max-width: 40px; max-height: 40px; border-radius: 3px; object-fit: cover;';
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        thumbnail.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    fileItem.appendChild(thumbnail);
+                } else {
+                    // Show file type icon
+                    const icon = document.createElement('div');
+                    icon.textContent = getFileIcon(file.type);
+                    icon.style.fontSize = '24px';
+                    fileItem.appendChild(icon);
+                }
+                
+                const fileInfo = document.createElement('div');
+                fileInfo.style.flex = '1';
+                fileInfo.innerHTML = `
+                    <div style="font-weight: bold; font-size: 12px; color: #333;">${file.name}</div>
+                    <div style="font-size: 11px; color: #666;">${formatFileSize(file.size)}</div>
+                `;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '×';
+                removeBtn.className = 'file-remove';
+                removeBtn.onclick = () => removeFile(index);
+                
+                fileItem.appendChild(fileInfo);
+                fileItem.appendChild(removeBtn);
+                fileList.appendChild(fileItem);
+            });
             
             preview.classList.add('show');
         }
 
-        function removeFile() {
-            selectedFile = null;
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) return '🖼️';
+            if (mimeType.startsWith('video/')) return '🎥';
+            if (mimeType.startsWith('audio/')) return '🎵';
+            if (mimeType === 'application/pdf') return '📄';
+            if (mimeType.includes('document') || mimeType.includes('word')) return '📝';
+            return '📎';
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            
+            if (selectedFiles.length === 0) {
+                removeAllFiles();
+            } else {
+                showFilePreview();
+            }
+        }
+
+        function removeAllFiles() {
+            selectedFiles = [];
             document.getElementById('file-input').value = '';
             document.getElementById('file-preview').classList.remove('show');
-            document.getElementById('file-thumbnail').style.display = 'none';
+            document.getElementById('file-list').innerHTML = '';
         }
 
         function formatFileSize(bytes) {

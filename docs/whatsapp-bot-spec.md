@@ -338,8 +338,9 @@ Se der, vamos usar META direto.
 A notificação deve ser assíncrona. A aprovação no nosso banco de dados é a fonte da verdade e não deve falhar se a notificação do WhatsApp falhar. A ação do síndico deve ser confirmada instantaneamente. Se a mensagem não for enviada, o sistema deve colocá-la em uma fila e tentar reenviar algumas vezes. A experiência do síndico é que a aprovação foi um sucesso.
 **Pergunta 3 (LGPD): Qual nossa política de deleção de dados? Se um morador solicitar ser 'esquecido', qual o procedimento? É um** **_hard delete_** **ou** **_soft delete_****?**
 Soft delete
-**Pergunta 4: Como vamos gerenciar o estado da conversa? Se o serviço reiniciar no meio de um cadastro, o morador perde todo o progresso? Vamos usar um banco em memória como Redis para armazenar a sessão?"**
-Para a v1, um gerenciamento de estado em memória no próprio serviço pode ser suficiente para validar a funcionalidade. No entanto, para garantir a robustez e não perder o progresso do usuário em caso de falha, a arquitetura final deve contemplar um armazenamento de sessão externo(Redis? ou DynamoDB?). Podemos começar simples, mas com o plano de evoluir para essa solução."
+**Pergunta 4: Como vamos gerenciar o estado da conversa? Se o serviço reiniciar no meio de um cadastro, o morador perde todo o progresso? Vamos usar um banco em memória como Redis para armazenar a sessão?**
+
+Resposta (atualizada 2025-10-24): Para a fase de protótipo (v1) um armazenamento de sessão em memória pode ser usado para acelerar o desenvolvimento, mas NÃO é recomendado para produção devido à perda de state em reinícios ou crashes. Recomendamos usar desde o início um armazenamento de sessão externo e durável (por exemplo: Redis com persistência habilitada, ou um armazenamento gerenciado como DynamoDB). Implemente a camada de sessão de forma 'pluggable' para que possamos trocar a implementação sem mudanças de API (ex.: provider Redis/DynamoDB). Documentar o tamanho esperado do estado e políticas de expiração/TTL para evitar crescimento indefinido.
 **Pergunta 5: Quais são os timeouts exatos que devemos configurar? Tanto para a inatividade do usuário (a spec sugere 5 e 15 min) quanto para as chamadas que o bot faz para a nossa própria API de back-office?**
 Os timeouts de usuário:5 minutos para o primeiro aviso e 15 para encerrar. Para as chamadas de API, o timeout deve ser curto, na casa de 5 a 10 segundos, com uma política de retentativa (retry) configurada para casos de falha momentânea da rede.
 **Pergunta 8: Qual a nossa estratégia de logging? O que é essencial logar para depuração e o que é proibido logar por questões de LGPD (como o conteúdo das mensagens ou dados pessoais)?**
@@ -348,8 +349,8 @@ Devemos logar eventos, IDs de correlação e erros. Por exemplo: `[INFO] Usuári
 A proteção será em camadas. A primeira é do próprio provedor de API (ie: Meta). Na nossa camada de aplicação, devemos implementar um rate limiting por número de telefone. Por exemplo, um mesmo número não pode iniciar o fluxo de solicitação de cadastro mais de 3 vezes em uma hora. Isso deve mitigar a maioria dos ataques de volume.
 ###   
 
-### **\[TODO\] Adições Importantes para a Spec**
-Ainda quero validar como colocar estes 2 itens abaixo:
+### Proposed additions (reviewed 2025-10-24)
+The items below were reviewed on 2025-10-24 and moved to "Proposed" status for inclusion in v2 planning. Keep the details below as implementation proposals.
 #### 1\. **Opção de Cancelar Ocorrência**
 Moradores devem ter a possibilidade de cancelar uma ocorrência registrada caso ela não seja mais necessária. Isso pode ser feito diretamente pelo WhatsApp.
 

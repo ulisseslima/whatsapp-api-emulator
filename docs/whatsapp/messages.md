@@ -125,7 +125,8 @@ A [`media` object](https://developers.facebook.com/docs/whatsapp/on-premises/r
 
  |
 
-Contains an [`hsm` object](https://developers.facebook.com/docs/whatsapp/api/messages#hsm-object). This option was deprecated with `v2.39` of the On-Premises API. Use the `template` object instead.
+Contains an [`hsm` object](https://developers.facebook.com/docs/whatsapp/api/messages#hsm-object).
+Note: the `hsm` object was deprecated in v2.39 — prefer using the `template` object instead.
 
 *[On-Premises API](https://developers.facebook.com/docs/whatsapp/on-premises) only*.
 
@@ -813,7 +814,7 @@ Example of `button` type with sub_type `copy_code`
 
 ### Hsm Object
 
-The `hsm` object has been deprecated with [`v2.39` of the WhatsApp Business on-premises/reference](https://developers.facebook.com/docs/whatsapp/on-premises/changelog#wa239). Please use the `template` object instead.
+The `hsm` object was deprecated in v2.39. Please use the `template` object instead.
 
 | Name | Description |
 | --- | --- |

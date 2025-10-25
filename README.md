@@ -1,252 +1,68 @@
-# WhatsApp Bot para Condomínios (com XState)
+# WhatsApp Bot Mock Interface
 
-Este é um bot do WhatsApp para gerenciamento de ocorrências em condomínios, implementado seguindo as especificações detalhadas no documento `docs/whatsapp-bot-spec.md`. A versão atual utiliza **XState** para gerenciamento robusto de estados e transições.
+This project includes a mock WhatsApp interface for testing the bot locally without needing the actual WhatsApp Business API.
 
-## Funcionalidades Implementadas
+## Quick Start
 
-### ✅ Fluxos Principais
-- **Aceite de Termos**: Primeiro uso com aceite de termos e política de privacidade
-- **Cadastro de Usuários**: 
-  - Confirmação de pré-cadastro (usuários já inseridos pelo síndico)
-  - Solicitação de novo cadastro (usuários desconhecidos)
-- **Menu Principal**: Navegação entre registro e consulta de ocorrências
-- **Registro de Ocorrências**: Coleta de descrição e mídia (fotos)
-- **Consulta de Ocorrências**: Visualização de ocorrências do usuário
-- **Notificações Proativas**: Updates de status e solicitação de feedback
-- **Sistema de Feedback**: Avaliação pós-resolução
+1. Copy `.env.example` to `.env` and configure your environment variables
+2. Install dependencies: `npm install`
+3. Start both the bot and mock interface: `npm run dev:with-mock`
 
-### ✅ Gerenciamento de Estado com XState
-- **State Machines por usuário**: Cada usuário tem sua própria máquina de estados
-- **Transições declarativas**: Estados e transições definidos de forma clara
-- **Context management**: Dados da conversa armazenados no contexto da máquina
-- **Cleanup automático**: Máquinas em estados finais são limpas automaticamente
-- **Type safety**: Eventos tipados e validação de transições
+## Available Scripts
 
-### ✅ APIs para Integração
-- `POST /api/user/approve` - Aprovar cadastro de usuário
-- `POST /api/user/reject` - Rejeitar cadastro de usuário  
-- `POST /api/occurrence/update` - Atualizar status de ocorrência
-- `GET /api/users` - Listar usuários (para testes)
-- `GET /api/occurrences` - Listar ocorrências (para testes)
-- `GET /api/conversations` - Listar máquinas de estado ativas (para testes)
+- `npm start` - Start the bot in production mode
+- `npm run dev` - Start the bot in development mode with nodemon
+- `npm run mock` - Start only the mock WhatsApp server
+- `npm run mock:dev` - Start the mock server with nodemon
+- `npm run dev:with-mock` - Start both the bot and mock server simultaneously
 
-## Configuração
+## Mock Interface
 
-1. Copie o arquivo de exemplo:
+The mock interface runs on `http://localhost:3001` by default and provides:
+
+1. **Mock WhatsApp API**: Endpoint at `/v18.0/{phoneNumberId}/messages` that mimics the real WhatsApp API
+2. **Web Interface**: A WhatsApp-like chat interface where you can:
+   - Enter a phone number
+   - Send messages to the bot
+   - See bot responses in real-time
+   - Click interactive buttons
+   - Clear the chat history
+
+## How It Works
+
+1. The mock server provides a WhatsApp-like API endpoint
+2. Your bot sends messages to the mock API instead of the real WhatsApp API (when `NODE_ENV` is not `production`)
+3. The web interface displays these messages and allows you to respond
+4. User responses are sent as webhooks to your bot, just like real WhatsApp would do
+
+## Environment Variables
+
 ```bash
-cp .env.example .env
-```
+# Set to development to use mock API
+NODE_ENV=development
 
-2. Configure as variáveis de ambiente no arquivo `.env`:
-```
-VERIFY_TOKEN=seu_token_de_verificacao
-ACCESS_TOKEN=seu_token_de_acesso_whatsapp
-PHONE_NUMBER_ID=seu_id_do_numero_telefone
+# Mock server configuration
+MOCK_WHATSAPP_URL=http://localhost:3001/v18.0
+MOCK_PORT=3001
+BOT_WEBHOOK_URL=http://localhost:3000/webhook
+
+# Your regular WhatsApp API config
+PHONE_NUMBER_ID=your_phone_number_id
+ACCESS_TOKEN=your_access_token
 WABA_API_VERSION=v18.0
-PORT=3000
 ```
 
-3. Instale as dependências:
-```bash
-npm install
-```
+## Usage
 
-4. Execute o servidor:
-```bash
-npm start
-```
+1. Start the servers: `npm run dev:with-mock`
+2. Open `http://localhost:3001` in your browser
+3. Enter a phone number (e.g., `5511999999999`)
+4. Click "Start Chat" or type a message and hit Enter
+5. Interact with your bot through the web interface
 
-## Arquitetura XState
-
-### Estados da Máquina
-```javascript
-const conversationMachine = createMachine({
-    id: 'whatsappBot',
-    initial: 'checkingTerms',
-    states: {
-        checkingTerms: { /* Verificação inicial */ },
-        waitingTermsAcceptance: { /* Aguardando aceite de termos */ },
-        termsRejected: { /* Estado final - termos rejeitados */ },
-        checkingUserStatus: { /* Verificação de status do usuário */ },
-        waitingName: { /* Coletando nome */ },
-        waitingEmail: { /* Coletando email */ },
-        waitingBlock: { /* Coletando bloco */ },
-        waitingUnit: { /* Coletando unidade */ },
-        waitingDataConfirmation: { /* Confirmação de dados */ },
-        registrationPending: { /* Aguardando aprovação */ },
-        registrationRejected: { /* Registro rejeitado */ },
-        mainMenu: { /* Menu principal */ },
-        waitingOccurrenceDescription: { /* Coletando descrição */ },
-        waitingOccurrenceMedia: { /* Coletando mídia */ },
-        viewingOccurrences: { /* Visualizando ocorrências */ },
-        waitingFeedback: { /* Aguardando feedback */ },
-        waitingFeedbackComment: { /* Aguardando comentário */ }
-    }
-});
-```
-
-### Eventos Suportados
-- `TERMS_NEEDED` - Mostrar termos de uso
-- `ACCEPT_TERMS` - Aceitar termos
-- `REJECT_TERMS` - Rejeitar termos
-- `PRE_REGISTERED` - Usuário pré-cadastrado
-- `NEW_USER` - Novo usuário
-- `APPROVED` - Usuário aprovado
-- `PROVIDE_NAME` - Fornecer nome
-- `PROVIDE_EMAIL` - Fornecer email
-- `PROVIDE_BLOCK` - Fornecer bloco
-- `PROVIDE_UNIT` - Fornecer unidade
-- `CONFIRM_DATA` - Confirmar dados
-- `START_OCCURRENCE` - Iniciar ocorrência
-- `PROVIDE_DESCRIPTION` - Fornecer descrição
-- `PROVIDE_MEDIA` - Fornecer mídia
-- `VIEW_OCCURRENCES` - Ver ocorrências
-- `PROVIDE_FEEDBACK` - Fornecer feedback
-
-### Context (Dados da Conversa)
-```javascript
-context: {
-    phone: null,
-    userData: {
-        name: '',
-        email: '',
-        block: '',
-        unit: ''
-    },
-    occurrenceData: {
-        description: '',
-        mediaUrl: null
-    },
-    feedbackData: {
-        rating: '',
-        comment: ''
-    }
-}
-```
-
-## Vantagens do XState
-
-### 🎯 **Previsibilidade**
-- Estados e transições bem definidos
-- Impossível chegar a estados inválidos
-- Comportamento determinístico
-
-### 🔧 **Manutenibilidade** 
-- Lógica de estado centralizada
-- Fácil visualização do fluxo
-- Mudanças controladas
-
-### 🐛 **Debugging**
-- Histórico de transições
-- Inspeção de estado atual
-- Logs estruturados
-
-### 🧪 **Testabilidade**
-- Estados isolados e testáveis
-- Transições unitárias
-- Mocks de contexto
-
-## Funções Principais
-
-### Gerenciamento de Máquinas
-```javascript
-// Criar ou obter máquina para usuário
-getOrCreateStateMachine(phone)
-
-// Obter estado atual
-getCurrentState(phone)
-
-// Enviar evento
-sendEvent(phone, 'EVENT_NAME', data)
-
-// Limpar máquina
-clearStateMachine(phone)
-
-// Obter dados do contexto
-getContextData(phone)
-```
-
-## Exemplos de Uso
-
-### Aprovar Usuário
-```bash
-curl -X POST http://localhost:3000/api/user/approve \
-  -H "Content-Type: application/json" \
-  -d '{"phone": "5511999999999"}'
-```
-
-### Ver Estado das Conversas
-```bash
-curl http://localhost:3000/api/conversations
-```
-
-Resposta:
-```json
-[
-  {
-    "phone": "5511999999999",
-    "currentState": "mainMenu",
-    "context": {
-      "phone": "5511999999999",
-      "userData": {
-        "name": "João Silva",
-        "email": "joao@email.com",
-        "block": "A",
-        "unit": "101"
-      },
-      "occurrenceData": {},
-      "feedbackData": {}
-    },
-    "done": false
-  }
-]
-```
-
-## Fluxograma de Estados
-
-```
-checkingTerms → waitingTermsAcceptance → checkingUserStatus
-                     ↓                         ↓
-                termsRejected              [Multiple paths]
-                     ↓                         ↓
-                   [END]                   mainMenu ←→ waitingOccurrence*
-                                             ↓
-                                       waitingFeedback
-                                             ↓
-                                       waitingFeedbackComment
-```
-
-## Próximos Passos
-
-Para produção, considere implementar:
-
-1. **Persistência de Estado**: Salvar estado das máquinas em banco de dados
-2. **Timeouts**: Implementar timeouts automáticos para transições
-3. **Métricas**: Coletar métricas de estados e transições
-4. **Visualização**: Interface para visualizar fluxos de estado
-5. **Guards**: Adicionar guards para validação de transições
-6. **Activities**: Implementar atividades para ações contínuas
-7. **History States**: Permitir retorno a estados anteriores
-8. **Parallel States**: Estados paralelos para funcionalidades simultâneas
-
-## Dependências
-
-- **xstate**: Biblioteca para máquinas de estado
-- **express**: Framework web
-- **axios**: Cliente HTTP
-- **dotenv**: Gerenciamento de variáveis de ambiente
-
-## Debugging XState
-
-Para debug visual das máquinas de estado, você pode usar:
-- [XState Visualizer](https://stately.ai/viz)
-- [XState Inspector](https://github.com/statelyai/inspect)
-
-## Conformidade LGPD
-
-O bot implementa:
-- Aceite explícito de termos e política de privacidade
-- Registro de data/hora do aceite
-- Versioning de termos
-- Estados seguros para dados pessoais
-- Limpeza automática de máquinas finalizadas
+The interface supports:
+- Text messages
+- Interactive buttons
+- Real-time message updates
+- Message timestamps
+- WhatsApp-like styling
